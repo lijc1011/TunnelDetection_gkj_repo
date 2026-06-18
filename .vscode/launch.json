@@ -1,0 +1,40 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug TunnelDetection",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/Debug/TunnelDetection.exe",
+            "args": [],
+            "preLaunchTask": "Build Debug TunnelDetection",
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/bin/Debug",
+            "environment": [
+                {
+                    "name": "PATH",
+                    "value": "C:/Qt/Qt6.11.1/6.11.1/msvc2022_64/bin;C:/dev/opencv-4.8.0/opencv/build/x64/vc16/bin;C:/Program Files/Teledyne DALSA/Sapera/Bin;C:/dev/vcpkg/installed/x64-windows/bin;C:/dev/vcpkg/installed/x64-windows/debug/bin;${env:PATH}"
+                }
+            ],
+            "externalConsole": false
+        },
+        {
+            "name": "Run TunnelDetection",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/Debug/TunnelDetection.exe",
+            "args": [],
+            "preLaunchTask": "Build Debug TunnelDetection",
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/bin/Debug",
+            "environment": [
+                {
+                    "name": "PATH",
+                    "value": "C:/Qt/Qt6.11.1/6.11.1/msvc2022_64/bin;C:/dev/opencv-4.8.0/opencv/build/x64/vc16/bin;C:/Program Files/Teledyne DALSA/Sapera/Bin;C:/dev/vcpkg/installed/x64-windows/bin;C:/dev/vcpkg/installed/x64-windows/debug/bin;${env:PATH}"
+                }
+            ],
+            "externalConsole": false,
+            "noDebug": true
+        }
+    ]
+}

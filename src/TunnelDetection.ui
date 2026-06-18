@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>TunnelDetection</class>
+ <widget class="QMainWindow" name="TunnelDetection">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>TunnelDetection</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QLabel" name="label_lineName">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>24</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>线路名称：</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="lineEdit_lineName">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>131</width>
+      <height>20</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_decTime">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>76</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>检测时间：</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="lineEdit_decTime">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>131</width>
+      <height>20</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_lineXB">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>53</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>运行行别：</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="radioButton_shang">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>43</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>上行</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="radioButton_xia">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>60</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>下行</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_milDir">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>46</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>里程增减：</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="radioButton_milInc">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>74</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>增加</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="radioButton_milDec">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>79</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>减小</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_chetouDir">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>31</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>车头朝向：</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="radioButton_chetouBig">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>58</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>大里程</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="radioButton_chetouSmall">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>58</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>小里程</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_nmil">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>46</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Mileage</string>
+    </property>
+   </widget>
+   <widget class="QLCDNumber" name="lcdNumber_nmil">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>64</width>
+      <height>23</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_nmilk">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>18</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>km</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_spe">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>36</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Speed</string>
+    </property>
+   </widget>
+   <widget class="QLCDNumber" name="lcdNumber_spe">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>64</width>
+      <height>23</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_spekh">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>31</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>km/h</string>
+    </property>
+   </widget>
+   <widget class="QTableWidget" name="tableWidget">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>256</width>
+      <height>192</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButton_GD_openzhaoming">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>75</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Open Light</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButton_GD_closemingzhao">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>75</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Close Light</string>
+    </property>
+   </widget>
+   <widget class="QGraphicsView" name="graphicsView">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>256</width>
+      <height>192</height>
+     </rect>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>33</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

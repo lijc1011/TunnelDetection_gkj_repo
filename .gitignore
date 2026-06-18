@@ -1,0 +1,33 @@
+# Build outputs
+build/
+build-*/
+bin/
+
+# Local/generated files
+temp_*.txt
+*.user
+*.suo
+*.VC.db
+*.VC.VC.opendb
+*.opensdf
+*.sdf
+*.ipch
+
+# Visual Studio/CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+
+# Heavy third-party binaries kept outside git
+3rdparty/opencv/
+
+# Runtime/debug artifacts
+*.pdb
+*.ilk
+*.obj
+*.log
