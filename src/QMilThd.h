@@ -42,7 +42,7 @@ public:
 private:
 	int m_iDevNum;
 	MILEAGEINFORSTRUCT m_mileageInfor;
-	//CCS m_ccs_Show;
+	std::mutex m_milMutex;
 	double m_fUnitMil;
 	int m_iPulsSave;
 	clock_t m_iTimeSave;

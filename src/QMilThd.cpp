@@ -122,12 +122,11 @@ void QMilThd::sub_runThdFun()
 
 			//	udValue = 0-udValue;
 
-
-
-			{//CLock lock(&m_ccs_Show);
-			//�����Ϣ�ṹ�帳ֵ
-			//������
-			m_mileageInfor.iPulseCount = udValue;
+			{
+				std::lock_guard<std::mutex> lock(m_milMutex);
+				// �����Ϣ�ṹ�帳ֵ
+				// ������
+				m_mileageInfor.iPulseCount = udValue;
 #if 1
 			//����ת
 			if (udValue > m_iPulsSave)
@@ -201,16 +200,17 @@ void QMilThd::sub_runThdFun()
 MILEAGEINFORSTRUCT QMilThd::GetMileageInfor(void)
 {
 	MILEAGEINFORSTRUCT tmp;
-	{//CLock lock(&m_ccs_Show);
+	{
+		std::lock_guard<std::mutex> lock(m_milMutex);
 
-
-	tmp.iPulseCount = m_mileageInfor.iPulseCount;
-	tmp.uiIncOrDec = m_mileageInfor.uiIncOrDec;
-	tmp.uiPositiveOrNegative = m_mileageInfor.uiPositiveOrNegative;
-	// 	tmp.fMileage = (m_mileageInfor.fMileage + m_fSetMileage)*m_fFactor;
-	tmp.fMileage = m_mileageInfor.fMileage;//+ m_fSetMileage;
-	tmp.fSpeed = m_mileageInfor.fSpeed;//
-	tmp.uiIncOrDecMil = m_iZengOrJian; }
+		tmp.iPulseCount = m_mileageInfor.iPulseCount;
+		tmp.uiIncOrDec = m_mileageInfor.uiIncOrDec;
+		tmp.uiPositiveOrNegative = m_mileageInfor.uiPositiveOrNegative;
+		// 	tmp.fMileage = (m_mileageInfor.fMileage + m_fSetMileage)*m_fFactor;
+		tmp.fMileage = m_mileageInfor.fMileage; //+ m_fSetMileage;
+		tmp.fSpeed = m_mileageInfor.fSpeed;		//
+		tmp.uiIncOrDecMil = m_iZengOrJian;
+	}
 	return tmp;
 }
 

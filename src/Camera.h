@@ -36,8 +36,8 @@ private:
 	int m_iImageWidth, m_iImageHeight;		///< ͼ�����
 
 //////////////////////////////////////////////////////////////////////////
-	// CCS m_ccs_Save;	
-	// CCS m_ccs_Show;	
+	std::mutex m_showMutex;
+	std::mutex m_saveMutex;
 	deque<FRAMEIMAGESTRUCT> m_ImgDeqShow;
 	deque<FRAMEIMAGESTRUCT> m_ImgDeqSave;
 	int m_IsFullCnt;

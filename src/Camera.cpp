@@ -423,7 +423,7 @@ void CCamera::CallBackSub(void)
 			ReleaseDeqDuiqi();
 		}
 
-		printf ("                                   DeqShowSize: = %zd\tDeqSaveSize: = %zd\n", m_ImgDeqShow.size(),m_ImgDeqSave.size());
+	//	printf ("                                   DeqShowSize: = %zd\tDeqSaveSize: = %zd\n", m_ImgDeqShow.size(),m_ImgDeqSave.size());
 		 
  	}
 	else
@@ -552,55 +552,63 @@ void CCamera::WriteToShowDeque(void* pData)
 	memcpy(fmst.pDataPoint, pData,m_camInfor.iSizeFrame);
 	fmst.isShow = false;
 
-	// {CLock lock(&m_ccs_Show);
-	// m_ImgDeqShow.push_back(fmst);
-	// }
+	{
+		std::lock_guard<std::mutex> lock(m_showMutex);
+		m_ImgDeqShow.push_back(fmst);
+	}
 }
 void CCamera::WriteToSaveDeque(void* pData)
 {
 
-// 	//�ڴ˵õ������Ϣ
-// 	FRAMEIMAGESTRUCT fmst;
-// 	fmst.iHeight = m_camInfor.ImageHeight;
-// 	fmst.iWeight = m_camInfor.ImageWidth;
-// 	fmst.iSizeFrame = m_camInfor.iSizeFrame;
-// 	fmst.pDataPoint = new unsigned char[m_camInfor.iSizeFrame];//�Ƿ���Է��ڽṹ�嶨��ʱnew
-// //	fmst.mil = g_milDirect.GetMileageInfor();
-// 	fmst.mil = cam_milDetect->GetMileageInfor();
+	//�ڴ˵õ������Ϣ
+	FRAMEIMAGESTRUCT fmst;
+	fmst.iHeight = m_camInfor.ImageHeight;
+	fmst.iWeight = m_camInfor.ImageWidth;
+	fmst.iSizeFrame = m_camInfor.iSizeFrame;
+	fmst.pDataPoint = new unsigned char[m_camInfor.iSizeFrame];//�Ƿ���Է��ڽṹ�嶨��ʱnew
+//	fmst.mil = g_milDirect.GetMileageInfor();
+	fmst.mil = cam_milDetect->GetMileageInfor();
 	
-// 	//1.ʱ���
-// 	auto now1 = std::chrono::system_clock::now();
-// 	auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(now1.time_since_epoch()).count();
-// 	fmst.timems = timestamp/*clock()*/;
-// 	double dtmp = -2;
-// 	GetCamFreg(dtmp);//2.��Ƶ
-//  	fmst.dHFreqPrecision = dtmp;
-// 	fmst.pulseCount = fmst.mil.iPulseCount;//3.������
-// 	fmst.gykMil = m_dmil_GYK;//4.gyk���
-//  	memcpy(fmst.pDataPoint, pData,m_camInfor.iSizeFrame);
+	//1.ʱ���
+	auto now1 = std::chrono::system_clock::now();
+	auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(now1.time_since_epoch()).count();
+	fmst.timems = timestamp/*clock()*/;
+	double dtmp = -2;
+	GetCamFreg(dtmp);//2.��Ƶ
+ 	fmst.dHFreqPrecision = dtmp;
+	fmst.pulseCount = fmst.mil.iPulseCount;//3.������
+	fmst.gykMil = m_dmil_GYK;//4.gyk���
+ 	memcpy(fmst.pDataPoint, pData,m_camInfor.iSizeFrame);
 
-// 	{CLock lock(&m_ccs_Save);
-// 	m_ImgDeqSave.push_back(fmst);
-// 	}
+	{
+		std::lock_guard<std::mutex> lock(m_saveMutex);
+		m_ImgDeqSave.push_back(fmst);
+	}
 }
 
 BOOL CCamera::IsSave(void)
 {
+	std::lock_guard<std::mutex> lock(m_saveMutex);
+	return m_ImgDeqSave.size() >= MAXFRAME;
+
 	// if (m_ImgDeqSave.size()>=MAXFRAME)
 	// {
 	// 	return TRUE;
 	// }
 	// else
-		return FALSE;
+	// 	return FALSE;
 }
 BOOL CCamera::IsShowII(void)
 {
+	std::lock_guard<std::mutex> lock(m_showMutex);
+	return m_ImgDeqShow.size() >= MAXFRAME;
+
 	// if (m_ImgDeqShow.size() >= MAXFRAME)
 	// {
 	// 	return TRUE;
 	// }
 	// else
-		return FALSE;
+	// 	return FALSE;
 }
  
 void CCamera::StartAcquisition(void)
@@ -626,133 +634,132 @@ void CCamera::StopCamera()
 
 BOOL CCamera::GetShowDeqDataII(unsigned char* pDataBuffer, int isize)
 {
-	// {CLock lock(&m_ccs_Show);
-	// for (int j = 0; j < isize; j++)
-	// {
-	// 	FRAMEIMAGESTRUCT pft = m_ImgDeqShow.at(j);
+	{
+		std::lock_guard<std::mutex> lock(m_showMutex);
+		for (int j = 0; j < isize; j++)
+		{
+			FRAMEIMAGESTRUCT pft = m_ImgDeqShow.at(j);
 
-	// 	int src = 0;
-	// 	int dst = m_camInfor.iSizeFrame*j;
-	// 	memcpy(pDataBuffer + dst, pft.pDataPoint + src, m_camInfor.iSizeFrame);
-		
-	// }
+			int src = 0;
+			int dst = m_camInfor.iSizeFrame * j;
+			memcpy(pDataBuffer + dst, pft.pDataPoint + src, m_camInfor.iSizeFrame);
+		}
+	}
 
-	// }
-
-	// ClearShowDeg();
+	ClearShowDeg();
 	return TRUE;
 
 
 }
 BOOL CCamera::ClearShowDeg()
 {
-	// {CLock lock(&m_ccs_Show);
+	{
+		std::lock_guard<std::mutex> lock(m_showMutex);
 
-	// int isize = m_ImgDeqShow.size();
-	// for (int j=0;j<isize;j++)
-	// {
-	// 	if (m_ImgDeqShow.size() >0)
-	// 	{
-	// 		FRAMEIMAGESTRUCT  jp_tmp = m_ImgDeqShow.front();
-	// 		delete[] jp_tmp.pDataPoint;
-	// 		jp_tmp.pDataPoint = NULL;
-	// 		m_ImgDeqShow.pop_front();
-	// 	}
- 	// }
- 	// }
+		int isize = m_ImgDeqShow.size();
+		for (int j = 0; j < isize; j++)
+		{
+			if (m_ImgDeqShow.size() > 0)
+			{
+				FRAMEIMAGESTRUCT jp_tmp = m_ImgDeqShow.front();
+				delete[] jp_tmp.pDataPoint;
+				jp_tmp.pDataPoint = NULL;
+				m_ImgDeqShow.pop_front();
+			}
+		}
+	}
 	return TRUE;
 }
 
 BOOL CCamera::GetSaveDeqData(pPICTUREIMAGESTRUCT pPic)
 {
-//  	int isize = pPic->picInfor.iFrameNum;
-// 	{CLock lock(&m_ccs_Save);
-// 	for (int j=0;j<isize;j++)
-// 	{
-//  		FRAMEIMAGESTRUCT pft = m_ImgDeqSave.at(j);
-// 		pPic->picInfor.mil = pft.mil;
-// 		pPic->picInfor.timems[j] = pft.timems;//1.ʱ���
-// 		pPic->picInfor.dHFreqPrecision[j] = pft.dHFreqPrecision;//2.��Ƶ
-// 		pPic->picInfor.pulseCount[j] = pft.pulseCount;//3.������
-// 		pPic->picInfor.gykMil[j] = pft.gykMil;//4.������
-// // 		if (j==0/*MAXFRAME/2*/)
-// // 		{
-// // 			pPic->picInfor.mil = pft.mil;
-// // 			pPic->picInfor.timems = pft.timems;
-// // 		}
-//  		int src = 0;
-// 		int dst = m_camInfor.iSizeFrame*j;//128��16�����ϱ�16���ڵģ�(HEIGHT-1)��Ϊ(HEIGHT)�ͺ���
-// 		memcpy(pPic->pDataBuffer+dst,pft.pDataPoint+src, m_camInfor.iSizeFrame);
-
- 
-// 	}
-// 	}
-//   	ClearSaveDeg(isize);
+ 	int isize = pPic->picInfor.iFrameNum;
+	{
+		std::lock_guard<std::mutex> lock(m_saveMutex);
+		for (int j = 0; j < isize; j++)
+		{
+			FRAMEIMAGESTRUCT pft = m_ImgDeqSave.at(j);
+			pPic->picInfor.mil = pft.mil;
+			pPic->picInfor.timems[j] = pft.timems;					 // 1.ʱ���
+			pPic->picInfor.dHFreqPrecision[j] = pft.dHFreqPrecision; // 2.��Ƶ
+			pPic->picInfor.pulseCount[j] = pft.pulseCount;			 // 3.������
+			pPic->picInfor.gykMil[j] = pft.gykMil;					 // 4.������
+			// 		if (j==0/*MAXFRAME/2*/)
+			// 		{
+			// 			pPic->picInfor.mil = pft.mil;
+			// 			pPic->picInfor.timems = pft.timems;
+			// 		}
+			int src = 0;
+			int dst = m_camInfor.iSizeFrame * j; // 128��16�����ϱ�16���ڵģ�(HEIGHT-1)��Ϊ(HEIGHT)�ͺ���
+			memcpy(pPic->pDataBuffer + dst, pft.pDataPoint + src, m_camInfor.iSizeFrame);
+		}
+	}
+	ClearSaveDeg(isize);
  	return TRUE;
 }
 BOOL CCamera::ClearSaveDeg(int iSize)
 {
-	// {CLock lock(&m_ccs_Save);
-
- 	// for (int j=0;j<iSize;j++)
-	// {
-	// 	if (m_ImgDeqSave.size() >0)
-	// 	{
-	// 		FRAMEIMAGESTRUCT  jp_tmp = m_ImgDeqSave.front();
-	// 		delete[] jp_tmp.pDataPoint;
-	// 		jp_tmp.pDataPoint = NULL;
-	// 		m_ImgDeqSave.pop_front();
-	// 	}
-	// }
-	// }
+	{
+		std::lock_guard<std::mutex> lock(m_saveMutex);
+		for (int j = 0; j < iSize; j++)
+		{
+			if (m_ImgDeqSave.size() > 0)
+			{
+				FRAMEIMAGESTRUCT jp_tmp = m_ImgDeqSave.front();
+				delete[] jp_tmp.pDataPoint;
+				jp_tmp.pDataPoint = NULL;
+				m_ImgDeqSave.pop_front();
+			}
+		}
+	}
 	 return TRUE;
 }
 
 BOOL CCamera::ClearShowAndSaveDeque()
 {
-	// ClearShowDeg();
-	// int isize = m_ImgDeqSave.size();
-	// ClearSaveDeg(isize);
+	ClearShowDeg();
+	int isize = get_ImgDeqSave_Size();
+	ClearSaveDeg(isize);
 	return TRUE;
 }
 void CCamera::ReleaseDeqDuiqi(void)
 {
 
-	// {CLock lock(&m_ccs_Save);
+	{
+		std::lock_guard<std::mutex> lock(m_saveMutex);
 
-	// if(m_ImgDeqSave.size()>0)
-	// {
-	// 	FRAMEIMAGESTRUCT  jp_tmp = m_ImgDeqSave.front();
-	// 	delete[] jp_tmp.pDataPoint;
-	// 	jp_tmp.pDataPoint = NULL;
-	// 	m_ImgDeqSave.pop_front();
-	// }
+		if (m_ImgDeqSave.size() > 0)
+		{
+			FRAMEIMAGESTRUCT jp_tmp = m_ImgDeqSave.front();
+			delete[] jp_tmp.pDataPoint;
+			jp_tmp.pDataPoint = NULL;
+			m_ImgDeqSave.pop_front();
+		}
+	}
 
-	// }
+	{
+		std::lock_guard<std::mutex> lock(m_showMutex);
 
-	// {CLock lock(&m_ccs_Show);
-
-	// if(m_ImgDeqShow.size()>0)
-	// {
-	// 	FRAMEIMAGESTRUCT  jp_tmp = m_ImgDeqShow.front();
-	// 	delete[] jp_tmp.pDataPoint;
-	// 	jp_tmp.pDataPoint = NULL;
-	// 	m_ImgDeqShow.pop_front();
-	// }
-
-	// }
-
-
-
+		if (m_ImgDeqShow.size() > 0)
+		{
+			FRAMEIMAGESTRUCT jp_tmp = m_ImgDeqShow.front();
+			delete[] jp_tmp.pDataPoint;
+			jp_tmp.pDataPoint = NULL;
+			m_ImgDeqShow.pop_front();
+		}
+	}
 }
 
 _int64 CCamera::get_ImgDeqShow_Size()
 {
-	return m_ImgDeqShow.size();
+	std::lock_guard<std::mutex> lock(m_showMutex);
+	return static_cast<_int64>(m_ImgDeqShow.size());
+
 }
 _int64 CCamera::get_ImgDeqSave_Size()
 {
-	return m_ImgDeqSave.size();
+	std::lock_guard<std::mutex> lock(m_saveMutex);
+	return static_cast<_int64>(m_ImgDeqSave.size());
 }
 
 
