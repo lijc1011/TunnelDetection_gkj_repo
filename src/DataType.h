@@ -7,6 +7,12 @@
 #define BEINGDETECTION 1    // 正在检测
 #define COMPLETEDETECTION 2 // 已检测
 
+#define FRAME_TIMESTAMP_DEVICE_VALID 0x00000001
+#define FRAME_TIMESTAMP_HOST_VALID 0x00000002
+#define FRAME_TIMESTAMP_AUXILIARY_VALID 0x00000004
+#define PICTURE_INDEX_MAGIC 0x58444950
+#define PICTURE_INDEX_VERSION_WITH_TIMESTAMPS 2
+
 ////临时配置信息结构体//////////////////////////////////////////////////////////////////////
 typedef struct program_temp_struct
 {
@@ -243,6 +249,10 @@ typedef struct FRAMEIMAGESTRUCT
     bool isShow;        // 用于标识是否已显示过
 
     __int64 timems;         // 每256条线1个时间戳
+    unsigned __int64 deviceTimestamp;
+    unsigned __int64 hostTimestamp;
+    unsigned __int64 auxiliaryTimestamp;
+    UINT timestampFlags;
     double dHFreqPrecision; // 每256条线1个行频
     __int64 pulseCount;     // 每256条线1个脉冲数
     double gykMil;          // 每256条线1个GYK里程
@@ -251,6 +261,10 @@ typedef struct FRAMEIMAGESTRUCT
     {
         pDataPoint = NULL;
         timems = 0;
+        deviceTimestamp = 0;
+        hostTimestamp = 0;
+        auxiliaryTimestamp = 0;
+        timestampFlags = 0;
         iHeight = 0;
         iWeight = 0;
         iSizeFrame = 0;
@@ -283,6 +297,15 @@ typedef struct PICTUREINFORSTRUCT
     __int64 pulseCount[MAXFRAME];     // 每幅图有16个脉冲数
     double gykMil[MAXFRAME];          // 每幅图有16个GYK里程
 
+    UINT indexMagic;
+    UINT indexVersion;
+    UINT indexRecordSize;
+    UINT timestampExtensionSize;
+    unsigned __int64 deviceTimestamp[MAXFRAME];
+    unsigned __int64 hostTimestamp[MAXFRAME];
+    unsigned __int64 auxiliaryTimestamp[MAXFRAME];
+    UINT timestampFlags[MAXFRAME];
+
     PICTUREINFORSTRUCT()
     {
         memset(&mil, 0, sizeof(MILEAGEINFORSTRUCT));
@@ -301,6 +324,10 @@ typedef struct PICTUREINFORSTRUCT
         iDownLine = 0;
         iIsValid = 0;
         iMilLongOrShort = 0;
+        indexMagic = PICTURE_INDEX_MAGIC;
+        indexVersion = PICTURE_INDEX_VERSION_WITH_TIMESTAMPS;
+        indexRecordSize = sizeof(PICTUREINFORSTRUCT);
+        timestampExtensionSize = sizeof(deviceTimestamp) + sizeof(hostTimestamp) + sizeof(auxiliaryTimestamp) + sizeof(timestampFlags);
 
         for (int i = 0; i < MAXFRAME; i++)
         {
@@ -308,6 +335,10 @@ typedef struct PICTUREINFORSTRUCT
             dHFreqPrecision[i] = 0;
             pulseCount[i] = 0;
             gykMil[i] = 0;
+            deviceTimestamp[i] = 0;
+            hostTimestamp[i] = 0;
+            auxiliaryTimestamp[i] = 0;
+            timestampFlags[i] = 0;
         }
     }
 } PICTUREINFORSTRUCT, *pPICTUREINFORSTRUCT;

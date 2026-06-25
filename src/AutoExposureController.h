@@ -18,7 +18,7 @@ public:
 
 	void adjust(const unsigned char* image,
 		int image_height, int image_width,
-		float& currentExposure, float& currentGain, // ʹ���������޸�ֵ
+		float& currentExposure, float& currentGain, // 使用引用来修改值
 		float minExposure, float maxExposure,
 		float minGain, float maxGain);
 };

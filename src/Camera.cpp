@@ -31,7 +31,7 @@ void CCamera::SetOffSet(int i0)
 
 bool CCamera::ConnectCamera()
 {
-	if (g_program_setInfor.CameraType == 0)//�������
+	if (g_program_setInfor.CameraType == 0) // 网口相机
 	{
 		QByteArray ba = m_camInfor.Name.toLocal8Bit();
 		char *dataPath1 = ba.data();
@@ -43,15 +43,15 @@ bool CCamera::ConnectCamera()
 		bool tmp = NewObjects();
 		return tmp;
 	}
-	else if (g_program_setInfor.CameraType == 1)//CamLink�����
+	else if (g_program_setInfor.CameraType == 1) // CamLink口相机
 	{
-// 		if (m_camInfor.iExposureMode == 0)//0��ʾ�����������
-// 		{
-// 			return false;
-// 		}
+		// 		if (m_camInfor.iExposureMode == 0)//0表示此相机不工作
+		// 		{
+		// 			return false;
+		// 		}
 
- 		m_ServerCount = m_pManger->GetServerCount(SapManager::ResourceAcq);               ///< ��ȡ�ɼ�������
-		m_CameraCount = m_pManger->GetServerCount(SapManager::ResourceAcqDevice);		  ///< ��ȡ�������
+		m_ServerCount = m_pManger->GetServerCount(SapManager::ResourceAcq);				  ///< 获取采集卡数量
+		m_CameraCount = m_pManger->GetServerCount(SapManager::ResourceAcqDevice);		  ///< 获取相机数量
 
 		if (m_ServerCount > 0)
 		{
@@ -60,7 +60,7 @@ bool CCamera::ConnectCamera()
 
 			for (int serverIndex = 0; serverIndex < m_ServerCount; serverIndex++)
 			{
- 				m_pManger->GetServerName(serverIndex, SapManager::ResourceAcq, m_ServerName);  ///< ����������ȡ�ɼ�������
+				m_pManger->GetServerName(serverIndex, SapManager::ResourceAcq, m_ServerName);			 ///< 根据索引获取采集卡名称
 				m_pManger->GetServerName(serverIndex, SapManager::ResourceAcqDevice, m_CameraName);      ///< 
  			 
  				char CamLinkName_c[256];
@@ -113,7 +113,7 @@ BOOL CCamera::InitCamera_CamLink(char *serverName, int resourceIndex, char *came
 	if (m_pBufferExtrack && !*m_pBufferExtrack && !m_pBufferExtrack->Create()) return FALSE;
 	if (m_Xfer && !*m_Xfer && !m_Xfer->Create()) return FALSE;
 
-	//��ʼ�����
+	// 初始化相机
 	SapLocation locCam(cameraName, 0);
 	m_AcqDevice = new SapAcqDevice(locCam, FALSE);
 	m_pFeature = new SapFeature(m_AcqDevice->GetLocation());
@@ -164,7 +164,7 @@ BOOL CCamera::LoadXML(char* lpPath)
  
 bool CCamera::NewObjects()
 {
-	//	m_AcqDevice = new SapAcqDevice("���");
+	//	m_AcqDevice = new SapAcqDevice("左侧");
 	//	m_AcqDevice	= new SapAcqDevice(dlg.GetLocation(), dlg.GetConfigFile());
 	m_Buffers	= new SapBufferWithTrash(10, m_AcqDevice);
 	m_Xfer		= new SapAcqDeviceToBuf(m_AcqDevice, m_Buffers, XferCallback, this);
@@ -206,14 +206,14 @@ BOOL CCamera::CreateObjects()
 	}
 
 	// Create view object
-// 	if (m_View && !*m_View && !m_View->Create())
-// 	{
-// 		WRITE_LOG(_T("CreateObjects3"),LOG_LEVEL_RUN);
-// 		DestroyObjects();
-// 		return FALSE;
-// 	}
-//	//ͼ����Ӧ��ʵ�ؼ���С
-//	m_View->SetScalingMode(SapView::ScalingFitToWindow);
+	// 	if (m_View && !*m_View && !m_View->Create())
+	// 	{
+	// 		WRITE_LOG(_T("CreateObjects3"),LOG_LEVEL_RUN);
+	// 		DestroyObjects();
+	// 		return FALSE;
+	// 	}
+	//	//图像适应现实控件大小
+	//	m_View->SetScalingMode(SapView::ScalingFitToWindow);
 
 	// Set next empty with trash cycle mode for transfer
 	if (m_Xfer && m_Xfer->GetPair(0))
@@ -277,14 +277,14 @@ BOOL CCamera::SetExpTime(double itime)
 //   	m_AcqDevice->GetFeatureValue("ExposureTime", &dtmp);
 // 	double uitmp = 0;
 // 	m_AcqDevice->GetFeatureValue("lineTriggerInputFrequency", &uitmp);
-	 
+
 	//   BOOL SetFeatureValue(const char *featureName, double featureValue);
-	//�����ع�ʱ��
+	// 设置曝光时间
 	if (m_AcqDevice->SetFeatureValue("ExposureTime", (double)itime))
 	{
-// 		CString str;
-// 		str. Format(_T("�����ع�ʱ�䣺%f"),itime);
-	//	WRITE_LOG(str,LOG_LEVEL_RUN);
+		// 		CString str;
+		// 		str. Format(_T("设置曝光时间：%f"),itime);
+		//	WRITE_LOG(str,LOG_LEVEL_RUN);
 		return TRUE;
  	}
 	else
@@ -373,7 +373,7 @@ BOOL CCamera::SetCamFreg(double iFreg)
 void CCamera::XferCallback(SapXferCallbackInfo *pInfo)
 {
 	CCamera *pDlg= (CCamera *) pInfo->GetContext();
-	pDlg->CallBackSub();
+	pDlg->CallBackSub(pInfo);
 
 	// If grabbing in trash buffer, do not display the image, update the
 	// appropriate number of frames on the status bar instead
@@ -393,7 +393,7 @@ void CCamera::XferCallback(SapXferCallbackInfo *pInfo)
 	
 
 }
-void CCamera::CallBackSub(void)
+void CCamera::CallBackSub(SapXferCallbackInfo *pInfo)
 {
 	void* pData = NULL;
 	if(m_Buffers->GetAddress(&pData))
@@ -413,7 +413,7 @@ void CCamera::CallBackSub(void)
 		}
 		else //��ʼ�洢
 		{
-			WriteToSaveDeque(pData);
+			WriteToSaveDeque(pData, pInfo);
 			WriteToShowDeque(pData);
 		}
 #endif
@@ -436,6 +436,49 @@ void CCamera::CallBackSub(void)
 
 
 }
+void CCamera::FillFrameTimestamp(SapXferCallbackInfo *pInfo, FRAMEIMAGESTRUCT &fmst)
+{
+	if (m_Buffers != NULL)
+	{
+		UINT64 deviceTimestamp = 0;
+		int bufferIndex = m_Buffers->GetIndex();
+		BOOL hasDeviceTimestamp = FALSE;
+
+		if (bufferIndex >= 0)
+		{
+			hasDeviceTimestamp = m_Buffers->GetDeviceTimeStamp(bufferIndex, &deviceTimestamp);
+		}
+
+		if (!hasDeviceTimestamp)
+		{
+			hasDeviceTimestamp = m_Buffers->GetDeviceTimeStamp(&deviceTimestamp);
+		}
+
+		if (hasDeviceTimestamp)
+		{
+			fmst.deviceTimestamp = deviceTimestamp;
+			fmst.timestampFlags |= FRAME_TIMESTAMP_DEVICE_VALID;
+		}
+	}
+
+	if (pInfo != NULL)
+	{
+		UINT64 hostTimestamp = 0;
+		if (pInfo->GetHostTimeStamp(&hostTimestamp))
+		{
+			fmst.hostTimestamp = hostTimestamp;
+			fmst.timestampFlags |= FRAME_TIMESTAMP_HOST_VALID;
+		}
+
+		UINT64 auxiliaryTimestamp = 0;
+		if (pInfo->GetAuxiliaryTimeStamp(&auxiliaryTimestamp))
+		{
+			fmst.auxiliaryTimestamp = auxiliaryTimestamp;
+			fmst.timestampFlags |= FRAME_TIMESTAMP_AUXILIARY_VALID;
+		}
+	}
+}
+
 void CCamera::YaSuoDaoFile(unsigned char* pBits,int w,int h,int q, QString strpath)
 {
 #if 0
@@ -557,7 +600,7 @@ void CCamera::WriteToShowDeque(void* pData)
 		m_ImgDeqShow.push_back(fmst);
 	}
 }
-void CCamera::WriteToSaveDeque(void* pData)
+void CCamera::WriteToSaveDeque(void* pData, SapXferCallbackInfo *pInfo)
 {
 
 	//�ڴ˵õ������Ϣ
@@ -573,6 +616,7 @@ void CCamera::WriteToSaveDeque(void* pData)
 	auto now1 = std::chrono::system_clock::now();
 	auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(now1.time_since_epoch()).count();
 	fmst.timems = timestamp/*clock()*/;
+	FillFrameTimestamp(pInfo, fmst);
 	double dtmp = -2;
 	GetCamFreg(dtmp);//2.��Ƶ
  	fmst.dHFreqPrecision = dtmp;
@@ -680,6 +724,10 @@ BOOL CCamera::GetSaveDeqData(pPICTUREIMAGESTRUCT pPic)
 		{
 			FRAMEIMAGESTRUCT pft = m_ImgDeqSave.at(j);
 			pPic->picInfor.mil = pft.mil;
+			pPic->picInfor.deviceTimestamp[j] = pft.deviceTimestamp;
+			pPic->picInfor.hostTimestamp[j] = pft.hostTimestamp;
+			pPic->picInfor.auxiliaryTimestamp[j] = pft.auxiliaryTimestamp;
+			pPic->picInfor.timestampFlags[j] = pft.timestampFlags;
 			pPic->picInfor.timems[j] = pft.timems;					 // 1.ʱ���
 			pPic->picInfor.dHFreqPrecision[j] = pft.dHFreqPrecision; // 2.��Ƶ
 			pPic->picInfor.pulseCount[j] = pft.pulseCount;			 // 3.������

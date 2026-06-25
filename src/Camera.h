@@ -28,15 +28,15 @@ private:
 	SapBuffer		 *m_pBufferExtrack;
 //	SapTransfer      *m_Xfer;
 	SapFeature       *m_pFeature;
-	
-	int m_ServerCount;						///< �ɼ�������
-	int m_CameraCount;						///< �������
- 	char *m_ServerName;						///< �ɼ�������
-	char *m_CameraName;						///< �������
-	BOOL InitCamera_CamLink(char *serverName, int resourceIndex, char *cameraName, QString ccfPath);
-	int m_iImageWidth, m_iImageHeight;		///< ͼ�����
 
-//////////////////////////////////////////////////////////////////////////
+	int m_ServerCount;						///< 采集卡数量
+	int m_CameraCount;						///< 相机数量
+	char *m_ServerName;					    ///< 采集卡名称
+	char *m_CameraName;						///< 相机名称
+	BOOL InitCamera_CamLink(char *serverName, int resourceIndex, char *cameraName, QString ccfPath);
+	int m_iImageWidth, m_iImageHeight; ///< 图像宽高
+
+	//////////////////////////////////////////////////////////////////////////
 	std::mutex m_showMutex;
 	std::mutex m_saveMutex;
 	deque<FRAMEIMAGESTRUCT> m_ImgDeqShow;
@@ -77,13 +77,14 @@ public:
 
 private:
 	static void XferCallback(SapXferCallbackInfo *pInfo);
-	void CallBackSub(void);
+	void CallBackSub(SapXferCallbackInfo *pInfo);
 	BOOL LoadXML(char* lpPath);
 	bool NewObjects();
 	BOOL CreateObjects();
+	void FillFrameTimestamp(SapXferCallbackInfo *pInfo, FRAMEIMAGESTRUCT &fmst);
 	
 	void WriteToShowDeque(void* pData);
-	void WriteToSaveDeque(void* pData);
+	void WriteToSaveDeque(void* pData, SapXferCallbackInfo *pInfo);
 
 public:
 	BOOL DestroyObjects();

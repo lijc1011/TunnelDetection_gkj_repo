@@ -16,26 +16,26 @@ double AutoExposureController::clamp(double value, double min_val, double max_va
 {
 	return std::max(min_val, std::min(value, max_val));
 }
-void AutoExposureController::adjust(const unsigned char* image,
-	int image_height, int image_width,
-	float& currentExposure, float& currentGain, // ʹ���������޸�ֵ
-	float minExposure, float maxExposure,
-	float minGain, float maxGain)
+void AutoExposureController::adjust(const unsigned char *image,
+									int image_height, int image_width,
+									float &currentExposure, float &currentGain, // 使用引用来修改值
+									float minExposure, float maxExposure,
+									float minGain, float maxGain)
 {
 	long long pixel_count = static_cast<long long>(image_height) * image_width;
 	if (pixel_count == 0) return;
 
-	// 1. ����
+	// 1. 测量
 	double sum = 0.0;
 	for (long long i = 0; i < pixel_count; ++i) {
 		sum += image[i];
 	}
 	double current_brightness = sum / pixel_count;
 
-	// 2. �Ƚ�
+	// 2. 比较
 	double error = target_brightness_ - current_brightness;
 
-	// 3. ������
+	// 3. 控制器
 	double p_term = kp_ * error;
 	integral_error_ += error;
 	integral_error_ = clamp(integral_error_, -100.0, 100.0);
@@ -43,7 +43,7 @@ void AutoExposureController::adjust(const unsigned char* image,
 
 	double adjustment_factor = 1.0 + (p_term + i_term) / 100.0;
 
-	// 4. ִ���� & 5. ����
+	// 4. 执行器 & 5. 解耦
 	double current_brightness_scale = currentExposure * currentGain;
 	double new_brightness_scale = current_brightness_scale * adjustment_factor;
 
