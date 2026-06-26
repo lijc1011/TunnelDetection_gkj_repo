@@ -17,10 +17,10 @@ public:
 
 	enum cmd
 	{
-		A_Camera01_20_21_R3_0x08 = 0x08,//���1
-		A_Camera02_23_24_R4_0x10 = 0x01,//���2
-		A_Camera03_25_26_R5_0x20 = 0x04,//���3
-		A_Camera04_27_28_R6_0x40 = 0x02,//���4
+		A_Camera01_20_21_R3_0x08 = 0x08,//相机1
+        A_Camera02_23_24_R4_0x10 = 0x01,//相机2
+        A_Camera03_25_26_R5_0x20 = 0x04,//相机3
+		A_Camera04_27_28_R6_0x40 = 0x02,//相机4
 
 	};
 
@@ -29,10 +29,10 @@ public:
 public:
 	BOOL SetDevNum(int iNum, double dUnitMil);
 	BOOL InitMil(void);
-	BOOL StartCount(void);//3��������
+	BOOL StartCount(void); // 3启动计数
 	BOOL StopCount(void);
-	MILEAGEINFORSTRUCT GetMileageInfor(void);//4��ȡ�����Ϣ
-	void SetUnitMil(float fValue);//2���õ�λ����
+	MILEAGEINFORSTRUCT GetMileageInfor(void); // 4获取里程信息
+	void SetUnitMil(float fValue);			  // 2设置单位步长
 	void SetZero(void);
 	void SetNowMileage(double dValue);
 	void SetZengjiaOrJianshao(int dValue);
@@ -68,10 +68,10 @@ private:
 	
 public:
     bool InitDiDo(int devnum);
-	bool WriteValue(unsigned char bValue);//3��������
+	bool WriteValue(unsigned char bValue);//3启动计数
 	bool ReadValue(unsigned char &bValue);//
-	bool JieTongCmd(unsigned char bValue);//AC�̵������������ͨ
-	bool DuankaiCmd(unsigned char bCmd);//AC�̵�����������Ͽ�
+	bool JieTongCmd(unsigned char bValue); // AC继电器常开触电接通
+	bool DuankaiCmd(unsigned char bCmd);//AC继电器长开触电断开
 
 };
 

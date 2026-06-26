@@ -10,7 +10,7 @@ QMilThd::QMilThd(QObject *parent)
 	m_iTimeSave = 0;
 	m_fSetMileage = 0;
 	m_fFactor = 1;
-	m_iZengOrJian = 0;//Ĭ������
+	m_iZengOrJian = 0; // 默认增加
 }
 
 QMilThd::~QMilThd()
@@ -43,8 +43,7 @@ BOOL QMilThd::InitMil(void)
 	// 	WCHAR* profilePath = (WCHAR*)m_profilePath.GetBuffer(m_profilePath.GetLength());
 	// 	errorCode = m_udCounterCtrl->LoadProfile(profilePath);
 
-
-#if 1 //��Ͳ������
+#if 1 // 滚筒编码器
 	// Step 3: select the counter channel
 	int channelStart = 0;
 	int channelCount = 1;
@@ -124,24 +123,24 @@ void QMilThd::sub_runThdFun()
 
 			{
 				std::lock_guard<std::mutex> lock(m_milMutex);
-				// �����Ϣ�ṹ�帳ֵ
-				// ������
+				// 里程信息结构体赋值
+				// 脉冲数
 				m_mileageInfor.iPulseCount = udValue;
 #if 1
-			//����ת
-			if (udValue > m_iPulsSave)
-			{
-				m_mileageInfor.uiIncOrDec = 0;//0��ת,����
-			}
+				// 正反转
+				if (udValue > m_iPulsSave)
+				{
+					m_mileageInfor.uiIncOrDec = 0; // 0正转,增大
+				}
 			else if (udValue < m_iPulsSave)
 			{
 				m_mileageInfor.uiIncOrDec = 1;
 			}
 
-			//����
+			// 正负
 			if (udValue > 0)
 			{
-				m_mileageInfor.uiPositiveOrNegative = 0;//0����
+				m_mileageInfor.uiPositiveOrNegative = 0; // 0正数
 			}
 			else if (udValue < 0)
 			{
@@ -149,36 +148,28 @@ void QMilThd::sub_runThdFun()
 			}
 #endif
 
-
-			//���
-			udValue = abs(udValue);//ȡ����ֵ��û�и����
+			// 里程
+			udValue = abs(udValue); // 取绝对值，没有负里程
 			if (m_iZengOrJian == 0)
 			{
-				//����
-				m_mileageInfor.fMileage = m_fSetMileage + udValue*m_fUnitMil / 1000;//��λ��
+				// 增加
+				m_mileageInfor.fMileage = m_fSetMileage + udValue * m_fUnitMil / 1000; // 单位米
 			}
 			else if (m_iZengOrJian == 1)
 			{
-				//����
-				m_mileageInfor.fMileage = m_fSetMileage - udValue*m_fUnitMil / 1000;//��λ��
+				// 减少
+				m_mileageInfor.fMileage = m_fSetMileage - udValue * m_fUnitMil / 1000; // 单位米
 			}
-			//	m_mileageInfor.fMileage = udValue*m_fUnitMil/1000;//��λ��
+			//	m_mileageInfor.fMileage = udValue*m_fUnitMil/1000;//单位米
 
-			//�ٶ�
+			// 速度
 #if 1
 			if (abs(m_iTimeSave - timems) >= 1000)
 			{
 				int tmp = abs(m_iPulsSave - udValue);
 				int itim = abs(m_iTimeSave - timems);
 				float maichong = (float)tmp / itim;
-				m_mileageInfor.fSpeed = maichong*m_fUnitMil*3.6*m_fFactor;	//mm/ms����m/s
-
-																			// 			USES_CONVERSION;
-																			// 			CString str;
-																			// 			str.Format(_T("%f = %d / %d����%f\n"),maichong,abs(m_iPulsSave-udValue),abs(m_iTimeSave-timems),m_mileageInfor.fSpeed);
-																			// 			char * p1 = T2A(str);   
-																			// 			printf("%f = %d / %d����%f\n",maichong,abs(m_iPulsSave-udValue),abs(m_iTimeSave-timems),m_mileageInfor.fSpeed);
-
+				m_mileageInfor.fSpeed = maichong * m_fUnitMil * 3.6 * m_fFactor; // mm/或者mm/s
 
 				m_iPulsSave = udValue;
 				m_iTimeSave = timems;
@@ -241,10 +232,10 @@ void QMilThd::SetCorrectionfactor(double dFactor)
 	m_fFactor = dFactor;
 }
 
-/////////1784do����///////////////////////////////////////////////////////////////////
+/////////1784do控制///////////////////////////////////////////////////////////////////
 bool QMilThd::InitDiDo(int devnum)
 {
-	//1784do����
+	// 1784do控制
 	m_instantDoCtrl = Automation::BDaq::AdxInstantDoCtrlCreate();
 
 	// Step 2: select the device with 'ModeWriteWithReset' mode

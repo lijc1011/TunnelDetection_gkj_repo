@@ -64,7 +64,7 @@ void QShowThd::sub_genOrgJpgFun()
 
 		if (m_isCanRun_org)
 		{
- 			//1.�ж�4���ɼ����е����ݶ�������4096ͼƬ������ʼˢ����ʾ
+			// 1.判断4个采集队列的数据都超过“4096图片”，则开始刷新显示
 			int isum = 0;
 			for (int i = 0; i < g_program_setInfor.CameraNumber; i++)
 			{
@@ -77,14 +77,14 @@ void QShowThd::sub_genOrgJpgFun()
 			{
 				continue;
 			}
-			
-			//2.˳���ȡ4�����У��ŵ�4����������
+
+			// 2.顺序读取4个队列，放到4个缓存区域
 			for (int i = 0; i < g_program_setInfor.CameraNumber; i++)
 			{
 				m_cam[i]->GetShowDeqDataII(pDataBuffer[i], MAXFRAME);
 			}
 
-			//2.5����ƽ�����ȣ�ʵʱ����
+			// 2.5计算平均亮度，实时设置
 			for (int i = 0; i < g_program_setInfor.CameraNumber; i++)
 			{
 				autoEC.adjust(pDataBuffer[i], 
@@ -100,23 +100,22 @@ void QShowThd::sub_genOrgJpgFun()
 				m_cam[i]->SetCamGain(m_currentGain[i]);
 				
 			}
-		
 
-			//3.��Ӧ��4��������ʾ
- 			for (int i = 0; i < g_program_setInfor.CameraNumber; i++)
+			// 3.对应在4个窗口显示
+			for (int i = 0; i < g_program_setInfor.CameraNumber; i++)
 			{
 // 				QString imgName = QString("cam-%2.jpg").arg(i + 1, 2, 10, QChar('0'));
 // 				Capture(pDataBuffer[i], m_camInfor[i].ImageWidth, m_camInfor[i].PictureHeight, imgName);
  
-				//ˢ����ʾ
- 				//ͼ�����ͨ�������ļ�����
-				if (m_camInfor[i].isColorCamera == 0)//�ڰ�
+				//刷新显示
+				//图像宽高通过参数文件设置
+				if (m_camInfor[i].isColorCamera == 0)//黑白
 				{
 					QImage picQImage = QImage(pDataBuffer[i], m_camInfor[i].ImageWidth, m_camInfor[i].PictureHeight, QImage::Format_Indexed8);
 					QPixmap picQPixmap = QPixmap::fromImage(picQImage);
 					emit threadover_Camdat_std(picQPixmap, i);
 				}
-				else if (m_camInfor[i].isColorCamera == 1)//��ɫ
+				else if (m_camInfor[i].isColorCamera == 1) // 彩色
 				{
 					QImage picQImage = QImage(pDataBuffer[i], m_camInfor[i].ImageWidth, m_camInfor[i].PictureHeight, QImage::Format_RGB888);
 					QPixmap picQPixmap = QPixmap::fromImage(picQImage);
@@ -139,13 +138,13 @@ void QShowThd::sub_genOrgJpgFun()
 }
 void QShowThd::Capture(BYTE* pBits, int w, int h, QString imgName)
 {
- 	//׼��·��
+	// 准备路径
 	QString acq_img;
 	acq_img += "D:\\";
 	acq_img += imgName;
 
 	vector<int>compression_params;
-	compression_params.push_back(cv::IMWRITE_JPEG_QUALITY); //PNG��ʽͼƬ��ѹ������  
+	compression_params.push_back(cv::IMWRITE_JPEG_QUALITY); // PNG格式图片的压缩级别
 	compression_params.push_back(95);
 
 	 

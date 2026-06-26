@@ -2,6 +2,7 @@
 build/
 build-*/
 bin/
+dist/
 
 # Local/generated files
 temp_*.txt

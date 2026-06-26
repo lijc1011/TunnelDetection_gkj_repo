@@ -55,35 +55,35 @@ void QSaveThd::sub_genOrgJpgFun()
 
 		if (m_isCanRun_org)
 		{
-			//1.�Ƿ��ÿ�ʼ�洢������
+			// 1.是否获得开始存储的命令
 			if (g_isSave[m_ichl] == false)
 			{
 				emit thread_signal_stopsave(m_ichl);
 				continue;
 			}
 #if 1
-			//2.�ж��Ƿ�����洢����
+			// 2.判断是否满足存储条件
 			if (m_cam->IsSave() == false)
 			{
 				continue;
 			}
 
-			//3.����������,��Ӷ���ȡͼƬ
+			// 3.若满足条件,则从队列取图片
 			m_cam->GetSaveDeqData(m_pPicture);
 
 			// 			QString imgName = QString("cam-%2.jpg").arg(m_ichl + 1, 2, 10, QChar('0'));
 			// 			Capture((BYTE *)m_pPicture->pDataBuffer, m_camInfor.ImageWidth, m_camInfor.PictureHeight, imgName);
 
-			//4.���ļ�
+			// 4.存文件
 			SaveFrameData(m_pPicture, m_iPicCnt);
 			m_iPicCnt++;
 			memset((void *)m_pPicture->pDataBuffer, 0, sizeof(m_pPicture->picInfor.iSizePicture));
 
 				emit thread_signal(m_ichl);
-			//5.�ͷŶ���
-			//��Ϊ�ѿ�ʼ�洢�����Դ洢���������ͷ�
-			// 			int isize = m_pPicture->picInfor.iFrameNum;
-			// 			m_cam->ClearSaveDeg(isize);
+				// 5.释放队列
+				// 因为已开始存储，所以存储完在这里释放
+				//  			int isize = m_pPicture->picInfor.iFrameNum;
+				//  			m_cam->ClearSaveDeg(isize);
 
 #endif
 		}
@@ -91,13 +91,13 @@ void QSaveThd::sub_genOrgJpgFun()
 }
 void QSaveThd::Capture(BYTE* pBits, int w, int h, QString imgName)
 {
-	//׼��·��
+	// 准备路径
 	QString acq_img;
 	acq_img += "D:\\";
 	acq_img += imgName;
 
 	vector<int>compression_params;
-	compression_params.push_back(cv::IMWRITE_JPEG_QUALITY); //PNG��ʽͼƬ��ѹ������  
+	compression_params.push_back(cv::IMWRITE_JPEG_QUALITY); // PNG格式图片的压缩级别
 	compression_params.push_back(95);
 
 
@@ -113,15 +113,15 @@ BOOL QSaveThd::SaveFrameData(pPICTUREIMAGESTRUCT pPicImg, __int64 isn)
 	if (lpFile_camData == NULL) return FALSE;
 	if (lpFile_camIdx == NULL) return FALSE;
 
-	//�ȴ�camdata��pPicImg.pDataBuffer
-	//�ȼ����ٴ洢
+	// 先存camdata,pPicImg.pDataBuffer
+	// 先加密再存储
 	if (im_encode != NULL)
 	{
 		im_encode->encrypt_data((char*)pPicImg->pDataBuffer, pPicImg->iBufferSize);
 	}
 	int a = fwrite(pPicImg->pDataBuffer, pPicImg->iBufferSize, 1, lpFile_camData);
-	//�ٴ�camidx��pPicImg.picInfor
-	//����д������Ϣ
+	// 再存camidx，pPicImg.picInfor
+	// 这里写索引信息
 	pPicImg->picInfor.iPicCnt = isn;
 	__int64 tmp = pPicImg->picInfor.iSizePicture;
 	pPicImg->picInfor.startPosition = isn*tmp;
@@ -139,34 +139,34 @@ void QSaveThd::StartSave(QString str_path, QString str_file)
 	str_path += "\\";
 	str_path += str_file;
 
-	//����������ļ�
+	// 打开相机数据文件
 	OpenCamDataSaveFile(str_path);
 
-	//ͬʱ��������������ļ�
+	// 同时打开相机数据索引文件
 	OpenCamIdxSaveFile(str_path);
 
-	m_iPicCnt = 0;//ÿ�δ洢ǰ����Ź���
+	m_iPicCnt = 0; // 每次存储前，序号归零
 	m_pPicture->picInfor.startPosition = 0;
 
 
 }
 void QSaveThd::OpenCamDataSaveFile(QString str_path_file)
 {
-	//���ļ�
+	// 打开文件
 	m_strAllfile_camData = str_path_file;
 
-	//ȡ���ļ���������ʱ���������ƽ��м��ܣ�����"20250514144747-1Cam_ZQJ1"
+	// 取出文件名，利用时间和相机名称进行加密，例如"20250514144747-1Cam_ZQJ1"
 	QFileInfo fi(m_strAllfile_camData);
 	QString str_FileNameKey = fi.fileName();
-	str_FileNameKey = str_FileNameKey.mid(0, str_FileNameKey.length() - 4);//��ȥ.tmp
+	str_FileNameKey = str_FileNameKey.mid(0, str_FileNameKey.length() - 4); // 减去.tmp
 
 	int startPos = str_FileNameKey.indexOf('-', 0);
-	QString str_Key = str_FileNameKey.mid(0, startPos);//ʱ��
+	QString str_Key = str_FileNameKey.mid(0, startPos); // 时间
 	str_Key += "-";
  
 	str_FileNameKey = str_FileNameKey.mid(startPos + 1, str_FileNameKey.length() - startPos);
 	startPos = str_FileNameKey.indexOf('-', 0);
-	str_Key += str_FileNameKey.mid(0, startPos);//�������
+	str_Key += str_FileNameKey.mid(0, startPos);//相机名称
 
 	if (im_encode == NULL)
 	{
@@ -191,13 +191,13 @@ void QSaveThd::OpenCamIdxSaveFile(QString str_path_file)
 	m_strAllfile_camIdx = strtmp;
 	m_strAllfile_camIdx += QStringLiteral(".camidx.tmp");
 
-	QFileInfo fi(m_strAllfile_camIdx);//ȡ���ļ�������̨��
+	QFileInfo fi(m_strAllfile_camIdx); // 取出文件名，存台账
 	m_str_IdxFileName = fi.fileName();
 
 	char xmlPath[RouteInfoSize];
 	strcpy(xmlPath, m_strAllfile_camIdx.toLocal8Bit().data());
 
-	//���ļ�
+	// 打开文件
 	if (fopen_s(&lpFile_camIdx, xmlPath, "wb") != 0)
 	{
 		return;
@@ -211,13 +211,13 @@ void QSaveThd::StopSave()
 }
 void QSaveThd::StopSaveImg(void)
 {
-	//ֹͣ�洢
+	// 停止存储
 	Sleep(100);
 
-	//�ر��ļ�
+	// 关闭文件
 	CloseSaveFile();
 
-	//������
+	// 重命名文件
 	ReNameDatFile();//tFile();
 	ReNameIdxFile();
 
@@ -230,13 +230,13 @@ void QSaveThd::CloseSaveFile()
 {
 	if (lpFile_camData != NULL)
 	{
-		fclose(lpFile_camData); /*�ر��ļ�*/
+		fclose(lpFile_camData); /*关闭文件*/
 		lpFile_camData = NULL;
 	}
 
 	if (lpFile_camIdx != NULL)
 	{
-		fclose(lpFile_camIdx); /*�ر��ļ�*/
+		fclose(lpFile_camIdx); /*关闭文件*/
 		lpFile_camIdx = NULL;
 	}
 
@@ -248,9 +248,9 @@ void QSaveThd::CloseSaveFile()
 }
 void QSaveThd::ReNameDatFile(void)
 {
-	//�޸��ļ�����ȥ����׺
+	// 修改文件名，去掉后缀
 	QString strold = m_strAllfile_camData;
-	QString strNew = m_strAllfile_camData.mid(0, m_strAllfile_camData.length() - 4);//��ȥ.tmp
+	QString strNew = m_strAllfile_camData.mid(0, m_strAllfile_camData.length() - 4); // 减去.tmp
 
 	char pOld[RouteInfoSize];
 	strcpy(pOld, strold.toLocal8Bit().data());
@@ -259,15 +259,15 @@ void QSaveThd::ReNameDatFile(void)
 
 	rename(pOld, pNew);
 
-	QFileInfo fi(strNew);//ȡ���ļ�������̨��
+	QFileInfo fi(strNew); // 取出文件名，存台账
 	m_str_ImgFileName = fi.fileName();
 
 }
 void QSaveThd::ReNameIdxFile(void)
 {
-	//�޸��ļ�����ȥ����׺
+	// 修改文件名，去掉后缀
 	QString strold = m_strAllfile_camIdx;
-	QString strNew = m_strAllfile_camIdx.mid(0, m_strAllfile_camIdx.length() - 4);//��ȥ.tmp
+	QString strNew = m_strAllfile_camIdx.mid(0, m_strAllfile_camIdx.length() - 4); // 减去.tmp
 
 	char pOld[RouteInfoSize];
 	strcpy(pOld, strold.toLocal8Bit().data());
@@ -276,7 +276,7 @@ void QSaveThd::ReNameIdxFile(void)
 
 	rename(pOld, pNew);
 
-	QFileInfo fi(strNew);//ȡ���ļ�������̨��
+	QFileInfo fi(strNew);//取出文件名，存台账
 	m_str_IdxFileName = fi.fileName();
 
 }

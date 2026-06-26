@@ -126,12 +126,12 @@ void CDiDo::PreLoad()
 
 		if (m_bOpenTrueOrCloseFalse)
 		{
-			//�Ͽ��̵���
-		//	int
+			// 断开继电器
+			//	int
 		}
 		else
 		{
-			//�պϼ̵���
+			// 闭合继电器
 		}
 
 	 
