@@ -85,21 +85,21 @@ void QShowThd::sub_genOrgJpgFun()
 			}
 
 			// 2.5计算平均亮度，实时设置
-			for (int i = 0; i < g_program_setInfor.CameraNumber; i++)
-			{
-				autoEC.adjust(pDataBuffer[i], 
-					m_camInfor[i].ImageWidth, 
-					m_camInfor[i].PictureHeight, 
-					m_currentExposure[i], 
-					m_currentGain[i], 
-					g_cameraInfor[i].ExposureTimeMin, 
-					g_cameraInfor[i].ExposureTimeMax,
-					g_cameraInfor[i].GainMin, 
-					g_cameraInfor[i].GainMax);
-				m_cam[i]->SetExpTime(m_currentExposure[i]); 
-				m_cam[i]->SetCamGain(m_currentGain[i]);
+			// for (int i = 0; i < g_program_setInfor.CameraNumber; i++)
+			// {
+			// 	autoEC.adjust(pDataBuffer[i], 
+			// 		m_camInfor[i].ImageWidth, 
+			// 		m_camInfor[i].PictureHeight, 
+			// 		m_currentExposure[i], 
+			// 		m_currentGain[i], 
+			// 		g_cameraInfor[i].ExposureTimeMin, 
+			// 		g_cameraInfor[i].ExposureTimeMax,
+			// 		g_cameraInfor[i].GainMin, 
+			// 		g_cameraInfor[i].GainMax);
+			// 	m_cam[i]->SetExpTime(m_currentExposure[i]); 
+			// 	m_cam[i]->SetCamGain(m_currentGain[i]);
 				
-			}
+			// }
 
 			// 3.对应在4个窗口显示
 			for (int i = 0; i < g_program_setInfor.CameraNumber; i++)
