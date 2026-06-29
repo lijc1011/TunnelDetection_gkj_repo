@@ -129,7 +129,7 @@ public:
      void sub_runThdFun();
      std::mutex my_lock;
      bool initCamera(int iSumNum);
-     CCamera *m_pCamera[MAXCAMNUM];
+     ICamera *m_pCamera[MAXCAMNUM];
 
      void startSaveImage(QString sdNumber = "1", QString sdName = "test"); // 开始存储数据
      void makeDestDir(QString strValue);

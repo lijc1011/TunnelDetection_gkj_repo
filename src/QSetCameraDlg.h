@@ -29,8 +29,8 @@ public:
 	void show_us();
 	void show_gain();
 	void show_Frequency();
-	void setCamera(CCamera *pDel[]);
-	CCamera* m_cam[MAXCAMNUM];
+	void setCamera(ICamera *pDel[]);
+	ICamera* m_cam[MAXCAMNUM];
 	void set_camera_us(int icam, int ivalue);
 	void set_camera_gain(int icam, int ivalue);
 	void set_camera_freg(int icam, int ivalue);

@@ -1,4 +1,5 @@
 #include "TunnelDetection.h"
+#include "HikCamera.h"
 
 TunnelDetection::TunnelDetection(QWidget* parent)
     : QMainWindow(parent)
@@ -1882,6 +1883,12 @@ void TunnelDetection::sub_runThdFun()
 }
 bool TunnelDetection::initCamera(int iSumNum)
 {
+    // 海康相机模式(CameraType==2)：使用前初始化一次 MVS SDK
+    if (g_program_setInfor.CameraType == 2)
+    {
+        MV_CC_Initialize();
+    }
+
     bool res[MAXCAMNUM] = {0};
     for (int i = 0; i < iSumNum; i++)
     {
@@ -1898,7 +1905,14 @@ bool TunnelDetection::initCamera(int iSumNum)
             g_cameraInfor[i].iSizeFrame = g_cameraInfor[i].ImageWidth * g_cameraInfor[i].ImageHeight * 3;
         }
 
-        m_pCamera[i] = new CCamera(g_cameraInfor[i], m_milDirect);
+        if (g_program_setInfor.CameraType == 2) // 海康网口相机
+        {
+            m_pCamera[i] = new CHikCamera(g_cameraInfor[i], m_milDirect);
+        }
+        else // 0=DALSA网口, 1=DALSA CamLink，沿用原 CCamera 通路
+        {
+            m_pCamera[i] = new CCamera(g_cameraInfor[i], m_milDirect);
+        }
         res[i] = m_pCamera[i]->ConnectCamera();
         if (res[i] == false)
             continue;
@@ -2750,6 +2764,11 @@ void TunnelDetection::disConnect()
             m_pCamera[i]->StopCamera();
             m_pCamera[i]->DestroyObjects();
         }
+    }
+    // 海康相机模式：反初始化 MVS SDK
+    if (g_program_setInfor.CameraType == 2)
+    {
+        MV_CC_Finalize();
     }
 }
 //////图像数据存储////////////////////////////////////////////////////////////////////

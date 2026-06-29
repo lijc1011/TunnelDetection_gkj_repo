@@ -11,7 +11,7 @@ QShowThd::~QShowThd()
 {
 
 }
-void QShowThd::setCamera(CCamera *pDel[], CAMERAINFORSTRUCT camInfor[])
+void QShowThd::setCamera(ICamera *pDel[], CAMERAINFORSTRUCT camInfor[])
 {
 	for (int i = 0; i < g_program_setInfor.CameraNumber; i++)
 	{

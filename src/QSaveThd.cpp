@@ -1,7 +1,7 @@
 //#include "stdafx.h"
 #include "QSaveThd.h"
 
-QSaveThd::QSaveThd(QObject *parent, CCamera *pDel, CAMERAINFORSTRUCT camInfor, int ichl)
+QSaveThd::QSaveThd(QObject *parent, ICamera *pDel, CAMERAINFORSTRUCT camInfor, int ichl)
 	: QObject(parent)
 {
 	m_ichl = ichl;

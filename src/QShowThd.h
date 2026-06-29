@@ -13,7 +13,7 @@ public:
 	QShowThd(QObject *parent);
 	~QShowThd();
 
-	void setCamera(CCamera *pDel[], CAMERAINFORSTRUCT camInfor[]);
+	void setCamera(ICamera *pDel[], CAMERAINFORSTRUCT camInfor[]);
 	void setCamera(QLabel* plabel[]);
 
 	void startThd();
@@ -40,7 +40,7 @@ signals:
 	void threadover_Camdat_std(QPixmap picQPixmap,int iChlV);
 
 private:
-	CCamera *m_cam[MAXCAMNUM];
+	ICamera *m_cam[MAXCAMNUM];
 	CAMERAINFORSTRUCT m_camInfor[MAXCAMNUM];
 	unsigned char* pDataBuffer[MAXCAMNUM];
 	__int64 pDataBufferSize[MAXCAMNUM];

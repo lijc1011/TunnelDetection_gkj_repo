@@ -194,7 +194,7 @@ void QSetCameraDlg::timerUpDate_freg()
 {
 	show_Frequency();
 }
-void QSetCameraDlg::setCamera(CCamera *pDel[])
+void QSetCameraDlg::setCamera(ICamera *pDel[])
 {
 	for (int i = 0; i < g_program_setInfor.CameraNumber; i++)
 	{

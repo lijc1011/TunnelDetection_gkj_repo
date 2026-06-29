@@ -2,10 +2,11 @@
 #include <mutex>
 #include "Globals.h"
 #include "DataType.h"
+#include "ICamera.h"
 #include "QMilThd.h"
 
 using namespace std;
-class	CCamera
+class	CCamera : public ICamera
 {
 public:
 	CCamera(CAMERAINFORSTRUCT camInfor, QMilThd* milDetect);

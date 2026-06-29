@@ -11,7 +11,7 @@ class QSaveThd : public QObject
 	Q_OBJECT
 
 public:
-	QSaveThd(QObject *parent, CCamera *pDel, CAMERAINFORSTRUCT camInfor, int ichl);
+	QSaveThd(QObject *parent, ICamera *pDel, CAMERAINFORSTRUCT camInfor, int ichl);
 	~QSaveThd();
 
 	void startThd();
@@ -46,7 +46,7 @@ public:
 
 private:
 	int m_ichl;
-	CCamera* m_cam;
+	ICamera* m_cam;
 	CAMERAINFORSTRUCT m_camInfor;
 	pPICTUREIMAGESTRUCT m_pPicture;
 

@@ -58,6 +58,19 @@ target_include_directories(Dalsa::Sapera INTERFACE
 )
 set_target_properties(Dalsa::Sapera PROPERTIES IMPORTED_LOCATION "${DALSA_LIB_PATH}")
 
+# 海康 MVS SDK（网口/USB 工业相机）
+set(HIK_MVS_DIR "C:/Program Files (x86)/MVS/Development" CACHE PATH "Path to HIKROBOT MVS SDK")
+set(HIK_MVS_LIB_PATH "${HIK_MVS_DIR}/Libraries/win64/MvCameraControl.lib")
+if(NOT EXISTS "${HIK_MVS_LIB_PATH}")
+    message(FATAL_ERROR "HIK MVS library not found: ${HIK_MVS_LIB_PATH}")
+endif()
+
+add_library(Hik::MvCameraControl STATIC IMPORTED GLOBAL)
+target_include_directories(Hik::MvCameraControl INTERFACE
+    "${HIK_MVS_DIR}/Includes"
+)
+set_target_properties(Hik::MvCameraControl PROPERTIES IMPORTED_LOCATION "${HIK_MVS_LIB_PATH}")
+
 if(NOT EXISTS "${Z5_INCLUDE_DIR}/z5/z5.hxx")
     message(FATAL_ERROR "z5 include directory not found or invalid: ${Z5_INCLUDE_DIR}")
 endif()
@@ -101,6 +114,7 @@ target_link_libraries(${PROJECT_NAME}
         ${OpenCV_LIBS}
         z5
         Dalsa::Sapera
+        Hik::MvCameraControl
         advan
         tinyxml
 )
