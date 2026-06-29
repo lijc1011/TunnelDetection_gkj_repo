@@ -1,0 +1,40 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "local",
+            "displayName": "Personal PC - VS2026 x64 (v143)",
+            "inherits": "common",
+            "generator": "Visual Studio 18 2026",
+            "architecture": "x64",
+            "toolset": "v143,host=x64",
+            "cacheVariables": {
+                "CMAKE_PREFIX_PATH": "C:/Qt/Qt6.8.3/6.8.3/msvc2022_64",
+                "CMAKE_TOOLCHAIN_FILE": "D:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake",
+                "OpenCV_DIR": "D:/dev/opencv/build/x64/vc16/lib",
+                "Z5_INCLUDE_DIR": "D:/zarr/z5-master/include",
+                "DALSA_DIR": "C:/Program Files/Teledyne DALSA/Sapera",
+                "HIK_MVS_DIR": "C:/Program Files (x86)/MVS/Development"
+            },
+            "environment": {
+                "PATH": "C:/Qt/Qt6.8.3/6.8.3/msvc2022_64/bin;D:/dev/opencv/build/x64/vc16/bin;C:/Program Files/Teledyne DALSA/Sapera/Bin;C:/Program Files (x86)/Common Files/MVS/Runtime/Win64_x64;D:/dev/vcpkg/installed/x64-windows/bin;D:/dev/vcpkg/installed/x64-windows/debug/bin;$penv{PATH}"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "local-debug",
+            "displayName": "Local Debug",
+            "configurePreset": "local",
+            "configuration": "Debug",
+            "targets": ["TunnelDetection"]
+        },
+        {
+            "name": "local-release",
+            "displayName": "Local Release",
+            "configurePreset": "local",
+            "configuration": "Release",
+            "targets": ["TunnelDetection"]
+        }
+    ]
+}

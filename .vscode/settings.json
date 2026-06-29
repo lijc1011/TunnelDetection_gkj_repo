@@ -1,22 +1,7 @@
 {
-    "qtConfigure.qtKitDir": "C:/Qt/Qt6.11.1/6.11.1/msvc2022_64",
-    "cmake.cmakePath": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe",
     "cmake.useCMakePresets": "always",
-    "cmake.configurePreset": "vs2022-x64",
-    "cmake.buildPreset": "debug",
-    "cmake.generator": "Visual Studio 17 2022",
-    "cmake.platform": "x64",
-    "cmake.buildDirectory": "${workspaceFolder}/build-vs2022",
+    "cmake.configurePreset": "local",
+    "cmake.buildPreset": "local-debug",
     "cmake.buildBeforeRun": true,
-    "cmake.defaultBuildTarget": "TunnelDetection",
-    "cmake.configureSettings": {
-        "CMAKE_PREFIX_PATH": "C:/Qt/Qt6.11.1/6.11.1/msvc2022_64",
-        "CMAKE_TOOLCHAIN_FILE": "C:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake",
-        "VCPKG_TARGET_TRIPLET": "x64-windows",
-        "OpenCV_DIR": "C:/dev/opencv-4.8.0/opencv/build/x64/vc16/lib",
-        "Z5_INCLUDE_DIR": "C:/zarr/z5-master/include"
-    },
-    "cmake.environment": {
-        "PATH": "C:/Qt/Qt6.11.1/6.11.1/msvc2022_64/bin;C:/dev/opencv-4.8.0/opencv/build/x64/vc16/bin;C:/Program Files/Teledyne DALSA/Sapera/Bin;C:/dev/vcpkg/installed/x64-windows/bin;C:/dev/vcpkg/installed/x64-windows/debug/bin;${env:PATH}"
-    }
+    "cmake.defaultBuildTarget": "TunnelDetection"
 }

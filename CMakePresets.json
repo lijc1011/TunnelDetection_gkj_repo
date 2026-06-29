@@ -2,46 +2,17 @@
     "version": 3,
     "cmakeMinimumRequired": {
         "major": 3,
-        "minor": 16,
+        "minor": 21,
         "patch": 0
     },
     "configurePresets": [
         {
-            "name": "vs2022-x64",
-            "displayName": "VS2022 x64",
-            "generator": "Visual Studio 17 2022",
-            "architecture": "x64",
-            "binaryDir": "${sourceDir}/build-vs2022",
+            "name": "common",
+            "hidden": true,
+            "binaryDir": "${sourceDir}/build/${presetName}",
             "cacheVariables": {
-                "CMAKE_PREFIX_PATH": "C:/Qt/Qt6.11.1/6.11.1/msvc2022_64",
-                "CMAKE_TOOLCHAIN_FILE": "C:/dev/vcpkg/scripts/buildsystems/vcpkg.cmake",
-                "VCPKG_TARGET_TRIPLET": "x64-windows",
-                "OpenCV_DIR": "C:/dev/opencv-4.8.0/opencv/build/x64/vc16/lib",
-                "Z5_INCLUDE_DIR": "C:/zarr/z5-master/include"
-            },
-            "environment": {
-                "PATH": "C:/Qt/Qt6.11.1/6.11.1/msvc2022_64/bin;C:/dev/opencv-4.8.0/opencv/build/x64/vc16/bin;C:/Program Files/Teledyne DALSA/Sapera/Bin;C:/dev/vcpkg/installed/x64-windows/bin;C:/dev/vcpkg/installed/x64-windows/debug/bin;$penv{PATH}"
+                "VCPKG_TARGET_TRIPLET": "x64-windows"
             }
-        }
-    ],
-    "buildPresets": [
-        {
-            "name": "debug",
-            "displayName": "Debug",
-            "configurePreset": "vs2022-x64",
-            "configuration": "Debug",
-            "targets": [
-                "TunnelDetection"
-            ]
-        },
-        {
-            "name": "release",
-            "displayName": "Release",
-            "configurePreset": "vs2022-x64",
-            "configuration": "Release",
-            "targets": [
-                "TunnelDetection"
-            ]
         }
     ]
 }

@@ -2,12 +2,17 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "CMake Configure VS2022",
+            "label": "CMake Configure Local",
             "type": "shell",
-            "command": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe",
+            "command": "powershell.exe",
             "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/tools/cmake.ps1",
                 "--preset",
-                "vs2022-x64"
+                "local"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
@@ -17,11 +22,16 @@
         {
             "label": "Build Debug TunnelDetection",
             "type": "shell",
-            "command": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe",
+            "command": "powershell.exe",
             "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/tools/cmake.ps1",
                 "--build",
                 "--preset",
-                "debug"
+                "local-debug"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
@@ -31,24 +41,29 @@
                 "isDefault": true
             },
             "dependsOn": [
-                "CMake Configure VS2022"
+                "CMake Configure Local"
             ],
             "problemMatcher": "$msCompile"
         },
         {
             "label": "Build Release TunnelDetection",
             "type": "shell",
-            "command": "C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/bin/cmake.exe",
+            "command": "powershell.exe",
             "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/tools/cmake.ps1",
                 "--build",
                 "--preset",
-                "release"
+                "local-release"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"
             },
             "dependsOn": [
-                "CMake Configure VS2022"
+                "CMake Configure Local"
             ],
             "problemMatcher": "$msCompile"
         }

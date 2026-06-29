@@ -14,10 +14,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 
-list(APPEND CMAKE_PREFIX_PATH "C:/Qt/Qt6.11.1/6.11.1/msvc2022_64")
-
-set(OpenCV_DIR "C:/dev/opencv-4.8.0/opencv/build/x64/vc16/lib" CACHE PATH "Path to OpenCVConfig.cmake")
-set(Z5_INCLUDE_DIR "C:/zarr/z5-master/include" CACHE PATH "Path to z5 include directory")
+# Machine-specific dependency locations belong in CMakeUserPresets.json.
+set(Z5_INCLUDE_DIR "" CACHE PATH "Path to z5 include directory")
 
 find_package(Qt6 COMPONENTS Widgets SerialPort REQUIRED)
 find_package(OpenCV 4.8.0 COMPONENTS world REQUIRED)
@@ -41,7 +39,10 @@ set(ADVAN_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/Advan" CACHE PATH "P
 add_library(advan INTERFACE)
 target_include_directories(advan INTERFACE "${ADVAN_INCLUDE_DIR}")
 
-set(DALSA_DIR "C:/Program Files/Teledyne DALSA/Sapera" CACHE PATH "Path to Teledyne DALSA Sapera SDK")
+set(DALSA_DIR "" CACHE PATH "Path to Teledyne DALSA Sapera SDK")
+if(NOT DALSA_DIR)
+    message(FATAL_ERROR "DALSA_DIR is required. Set it in CMakeUserPresets.json.")
+endif()
 set(DALSA_LIB_PATH "${DALSA_DIR}/Lib/Win64/SapClassBasic.lib")
 if(NOT EXISTS "${DALSA_LIB_PATH}")
     set(DALSA_LIB_PATH "${DALSA_DIR}/Lib/Win64/VS2015/SapClassBasic.lib")
@@ -59,7 +60,10 @@ target_include_directories(Dalsa::Sapera INTERFACE
 set_target_properties(Dalsa::Sapera PROPERTIES IMPORTED_LOCATION "${DALSA_LIB_PATH}")
 
 # 海康 MVS SDK（网口/USB 工业相机）
-set(HIK_MVS_DIR "C:/Program Files (x86)/MVS/Development" CACHE PATH "Path to HIKROBOT MVS SDK")
+set(HIK_MVS_DIR "" CACHE PATH "Path to HIKROBOT MVS SDK")
+if(NOT HIK_MVS_DIR)
+    message(FATAL_ERROR "HIK_MVS_DIR is required. Set it in CMakeUserPresets.json.")
+endif()
 set(HIK_MVS_LIB_PATH "${HIK_MVS_DIR}/Libraries/win64/MvCameraControl.lib")
 if(NOT EXISTS "${HIK_MVS_LIB_PATH}")
     message(FATAL_ERROR "HIK MVS library not found: ${HIK_MVS_LIB_PATH}")
@@ -72,7 +76,7 @@ target_include_directories(Hik::MvCameraControl INTERFACE
 set_target_properties(Hik::MvCameraControl PROPERTIES IMPORTED_LOCATION "${HIK_MVS_LIB_PATH}")
 
 if(NOT EXISTS "${Z5_INCLUDE_DIR}/z5/z5.hxx")
-    message(FATAL_ERROR "z5 include directory not found or invalid: ${Z5_INCLUDE_DIR}")
+    message(FATAL_ERROR "Z5_INCLUDE_DIR is missing or invalid: ${Z5_INCLUDE_DIR}")
 endif()
 
 add_library(z5 INTERFACE)
@@ -129,10 +133,12 @@ if(WIN32)
         )
     endif()
 
-    find_program(WINDEPLOYQT_EXECUTABLE
-        NAMES windeployqt
-        HINTS "C:/Qt/Qt6.11.1/6.11.1/msvc2022_64/bin"
-    )
+    set(QT_BIN_DIR "")
+    if(TARGET Qt6::qmake)
+        get_target_property(QMAKE_EXECUTABLE Qt6::qmake IMPORTED_LOCATION)
+        get_filename_component(QT_BIN_DIR "${QMAKE_EXECUTABLE}" DIRECTORY)
+    endif()
+    find_program(WINDEPLOYQT_EXECUTABLE NAMES windeployqt HINTS "${QT_BIN_DIR}")
     if(WINDEPLOYQT_EXECUTABLE)
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND "${WINDEPLOYQT_EXECUTABLE}" --compiler-runtime --force "$<TARGET_FILE:${PROJECT_NAME}>"
