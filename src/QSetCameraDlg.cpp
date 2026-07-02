@@ -124,8 +124,42 @@ QSetCameraDlg::QSetCameraDlg(QWidget *parent)
 	connect(timerprogress_deque, SIGNAL(timeout()), this, SLOT(timerUpDate_deque()));
 	timerprogress_deque->setInterval(10);//更新显示队列
 	timerprogress_deque->start();
-	
-	this->setLayout(ui->horizontalLayout);
+
+	// ===== 上下结构：上=亮度模式开关，下=相机参数 =====
+	// 下方 GroupBox：容纳原有 per-camera 控件（曝光/增益/行频/队列）
+	QGroupBox *bottomGroup = new QGroupBox(QStringLiteral("相机参数"), this);
+	bottomGroup->setLayout(ui->horizontalLayout);
+
+	// 上方 GroupBox：手动亮度 / 自动亮度 单选，默认手动
+	QGroupBox *topGroup = new QGroupBox(QStringLiteral("亮度模式"), this);
+	QHBoxLayout *topLayout = new QHBoxLayout();
+	m_radioManual = new QRadioButton(QStringLiteral("手动亮度"));
+	m_radioAuto = new QRadioButton(QStringLiteral("自动亮度"));
+	m_radioManual->setChecked(true); // 默认手动亮度
+	QButtonGroup *modeGroup = new QButtonGroup(this);
+	modeGroup->addButton(m_radioManual);
+	modeGroup->addButton(m_radioAuto);
+	topLayout->addWidget(m_radioManual);
+	topLayout->addWidget(m_radioAuto);
+	topLayout->addStretch();
+	topGroup->setLayout(topLayout);
+	topGroup->setMaximumHeight(60);
+	// 与全局总开关联动（QShowThd 负责边沿检测/复位/重播种）
+	connect(m_radioAuto, &QRadioButton::toggled, this, &QSetCameraDlg::onBrightnessModeChanged);
+
+	QVBoxLayout *mainLayout = new QVBoxLayout();
+	mainLayout->addWidget(topGroup);
+	mainLayout->addWidget(bottomGroup);
+	this->setLayout(mainLayout);
+
+	// 初值与界面一致：默认手动
+	g_autoBrightnessEnabled.store(false);
+}
+// 手动/自动亮度切换：仅翻转全局总开关，其余逻辑全在 QShowThd 门控内，
+// 关闭时对既有流程零影响。
+void QSetCameraDlg::onBrightnessModeChanged()
+{
+	g_autoBrightnessEnabled.store(m_radioAuto->isChecked());
 }
 
 QSetCameraDlg::~QSetCameraDlg()
@@ -317,5 +351,13 @@ void QSetCameraDlg::timerUpDate_deque()
 			LineEdit_DeqShow[i]->setText(QString::number(m_cam[i]->get_ImgDeqShow_Size(), 'f', 0));
 			LineEdit_DeqSave[i]->setText(QString::number(m_cam[i]->get_ImgDeqSave_Size(), 'f', 0));
  		}
+	}
+
+	// C1：自动亮度模式下，把相机实际曝光/增益实时回显到界面，
+	// 让用户看到 AE 动态调整过程。手动模式不刷新，保留用户手填值。
+	if (g_autoBrightnessEnabled.load())
+	{
+		show_us();
+		show_gain();
 	}
 }

@@ -8,6 +8,8 @@ bool g_isConnect[MAXCAMNUM];
 bool g_isShow[MAXCAMNUM];
 bool g_isSave[MAXCAMNUM];
 
+std::atomic<bool> g_autoBrightnessEnabled{false}; // 默认手动亮度
+
 double m_dmil_GYK;
 int m_dspeed_GYK;
 double m_dmil_GYK_Cor;

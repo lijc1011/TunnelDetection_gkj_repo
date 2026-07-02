@@ -34,6 +34,7 @@
 #include <array>     
 #include <thread>
 #include <mutex>
+#include <atomic>
 #include <numeric>
 #include <algorithm>
 #include <cmath>
@@ -64,6 +65,10 @@ extern std::vector<tunnel_data_struct> gtunnel_ledger_struct; // 隧道台账信
 extern bool g_isConnect[MAXCAMNUM]; // 相机是否连接
 extern bool g_isShow[MAXCAMNUM];    // 相机是否刷新显示
 extern bool g_isSave[MAXCAMNUM];    // 相机是否存储数据
+
+// 自动亮度自适应总开关：true=自动亮度(启用AE)，false=手动亮度(默认)。
+// 关闭时采集/显示/存储流程与未加此功能时逐字节一致，见 QShowThd 热路径的 if 门控。
+extern std::atomic<bool> g_autoBrightnessEnabled;
 
 extern double m_dmil_GYK; // GYK里程
 extern int m_dspeed_GYK;  // GYK速度

@@ -84,22 +84,49 @@ void QShowThd::sub_genOrgJpgFun()
 				m_cam[i]->GetShowDeqDataII(pDataBuffer[i], MAXFRAME);
 			}
 
-			// 2.5计算平均亮度，实时设置
-			// for (int i = 0; i < g_program_setInfor.CameraNumber; i++)
-			// {
-			// 	autoEC.adjust(pDataBuffer[i], 
-			// 		m_camInfor[i].ImageWidth, 
-			// 		m_camInfor[i].PictureHeight, 
-			// 		m_currentExposure[i], 
-			// 		m_currentGain[i], 
-			// 		g_cameraInfor[i].ExposureTimeMin, 
-			// 		g_cameraInfor[i].ExposureTimeMax,
-			// 		g_cameraInfor[i].GainMin, 
-			// 		g_cameraInfor[i].GainMax);
-			// 	m_cam[i]->SetExpTime(m_currentExposure[i]); 
-			// 	m_cam[i]->SetCamGain(m_currentGain[i]);
-				
-			// }
+			// 2.5 自动亮度(AE)——总开关门控。
+			// g_autoBrightnessEnabled==false(手动)时整段不进，显示/存储与原程序逐字节一致。
+			if (g_autoBrightnessEnabled.load())
+			{
+				// 手动->自动 上升沿：用相机当前真实曝光/增益播种并清积分(B1/A4)
+				if (!m_prevAutoEnabled)
+				{
+					for (int i = 0; i < g_program_setInfor.CameraNumber; i++)
+					{
+						double e = 0.0, g = 0.0;
+						if (m_cam[i]->GetExpTime(e)) m_currentExposure[i] = static_cast<float>(e);
+						if (m_cam[i]->GetCamGain(g)) m_currentGain[i] = static_cast<float>(g);
+						m_aec[i].reset();
+					}
+					m_aeCounter = 0;
+				}
+				m_prevAutoEnabled = true;
+
+				// 降频执行：每拼好 N 幅图才跑一次，给相机反应时间，防振荡(B3)
+				if (++m_aeCounter >= m_aeInterval)
+				{
+					m_aeCounter = 0;
+					for (int i = 0; i < g_program_setInfor.CameraNumber; i++)
+					{
+						// 入参顺序修正为(height,width)(B2)：整幅图 高=PictureHeight,宽=ImageWidth
+						m_aec[i].adjust(pDataBuffer[i],
+							m_camInfor[i].PictureHeight,
+							m_camInfor[i].ImageWidth,
+							m_currentExposure[i],
+							m_currentGain[i],
+							g_cameraInfor[i].ExposureTimeMin,
+							g_cameraInfor[i].ExposureTimeMax,
+							g_cameraInfor[i].GainMin,
+							g_cameraInfor[i].GainMax);
+						m_cam[i]->SetExpTime(m_currentExposure[i]);
+						m_cam[i]->SetCamGain(static_cast<int>(m_currentGain[i] + 0.5f));
+					}
+				}
+			}
+			else
+			{
+				m_prevAutoEnabled = false;
+			}
 
 			// 3.对应在4个窗口显示
 			for (int i = 0; i < g_program_setInfor.CameraNumber; i++)

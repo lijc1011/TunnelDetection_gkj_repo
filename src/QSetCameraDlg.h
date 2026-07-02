@@ -2,6 +2,7 @@
 #define QSETCAMERADLG_H
 
 #include <QDialog>
+#include <QRadioButton>
 #include "Globals.h"
 #include "Camera.h"
 
@@ -26,6 +27,10 @@ public:
 	QTimer *timerprogress_freg;
 	QTimer *timerprogress_deque;
 
+	// 亮度模式开关（手动/自动亮度），总开关写全局 g_autoBrightnessEnabled
+	QRadioButton *m_radioManual;
+	QRadioButton *m_radioAuto;
+
 	void show_us();
 	void show_gain();
 	void show_Frequency();
@@ -41,6 +46,7 @@ private slots :
 	void pb_setfreg_Button();//
 	void timerUpDate_freg(); //自动更新行频
 	void timerUpDate_deque(); //自动更新2个队列
+	void onBrightnessModeChanged(); //手动/自动亮度切换
     
 private:
     Ui::QSetCameraDlg *ui;
