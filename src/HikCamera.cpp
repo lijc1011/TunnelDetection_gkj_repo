@@ -4,8 +4,8 @@
 // 海康黑白线阵相机封装。设计目标：对外接口与 DALSA 的 CCamera 完全一致，
 // 上层显示/存储/参数线程通过 ICamera* 多态调用，无需区分相机品牌。
 //
-// 设备匹配：CAMERAINFORSTRUCT.CamLinkName 字段在海康模式下复用为相机标识，
-// 可填【固定IP】(推荐) / 用户自定义名 / 序列号 三者之一；为空则取第一台海康网口相机。
+// 设备匹配：海康是网口相机，沿用 DALSA 网口约定，用 CAMERAINFORSTRUCT.Name 匹配，
+// Name 需与 MVS 的 Device User ID(用户自定义名) / 固定IP / 序列号 之一一致；为空则取第一台。
 
 namespace
 {
@@ -41,9 +41,11 @@ bool CHikCamera::FindDeviceIndex(MV_CC_DEVICE_INFO_LIST &devList, int &matchInde
     if (devList.nDeviceNum == 0)
         return false;
 
-    QString wanted = m_camInfor.CamLinkName.trimmed();
+    // 海康是网口相机，沿用 DALSA 网口的约定：靠 Name 匹配(对应 MVS 的 Device User ID)。
+    // 多台相机时若 Name 都留空，会全部命中同一台设备(索引0)，第二台独占打开失败，故必须填。
+    QString wanted = m_camInfor.Name.trimmed();
 
-    // 未指定标识：直接用第一台海康网口相机
+    // 无标识：只有单台场景才退化为取第一台
     if (wanted.isEmpty())
     {
         matchIndex = 0;

@@ -48,7 +48,7 @@ private:
     static void __stdcall ImageCallBackEx(unsigned char *pData, MV_FRAME_OUT_INFO_EX *pFrameInfo, void *pUser);
     void OnFrame(unsigned char *pData, MV_FRAME_OUT_INFO_EX *pFrameInfo);
 
-    // 根据 CamLinkName（海康用作 IP / 用户自定义名 / 序列号标识）查找设备
+    // 根据 Name（海康网口用作 Device User ID / IP / 序列号标识）查找设备
     bool FindDeviceIndex(MV_CC_DEVICE_INFO_LIST &devList, int &matchIndex);
     void ApplyCameraParams();
     void FillFrameTimestamp(MV_FRAME_OUT_INFO_EX *pFrameInfo, FRAMEIMAGESTRUCT &fmst);
