@@ -14,7 +14,9 @@
                 "OpenCV_DIR": "D:/dev/opencv/build/x64/vc16/lib",
                 "Z5_INCLUDE_DIR": "D:/zarr/z5-master/include",
                 "DALSA_DIR": "C:/Program Files/Teledyne DALSA/Sapera",
-                "HIK_MVS_DIR": "C:/Program Files (x86)/MVS/Development"
+                "HIK_MVS_DIR": "C:/Program Files (x86)/MVS/Development",
+                "TUNNEL_USE_Z5": "OFF",
+                "CMAKE_POLICY_VERSION_MINIMUM": "3.5"
             },
             "environment": {
                 "PATH": "C:/Qt/Qt6.8.3/6.8.3/msvc2022_64/bin;D:/dev/opencv/build/x64/vc16/bin;C:/Program Files/Teledyne DALSA/Sapera/Bin;C:/Program Files (x86)/Common Files/MVS/Runtime/Win64_x64;D:/dev/vcpkg/installed/x64-windows/bin;D:/dev/vcpkg/installed/x64-windows/debug/bin;$penv{PATH}"
@@ -24,17 +26,35 @@
     "buildPresets": [
         {
             "name": "local-debug",
-            "displayName": "Local Debug",
+            "displayName": "Debug 全量构建（含 TensorStore，首次/TensorStore 变动时用）",
             "configurePreset": "local",
             "configuration": "Debug",
-            "targets": ["TunnelDetection"]
+            "targets": ["TunnelDetection", "TsZarrBench"],
+            "nativeToolOptions": ["/m"]
+        },
+        {
+            "name": "local-debug-fast",
+            "displayName": "Debug 增量构建（仅主程序，日常默认）",
+            "configurePreset": "local",
+            "configuration": "Debug",
+            "targets": ["TunnelDetection"],
+            "nativeToolOptions": ["/m", "/p:BuildProjectReferences=false"]
         },
         {
             "name": "local-release",
-            "displayName": "Local Release",
+            "displayName": "Release 全量构建（含 TensorStore）",
             "configurePreset": "local",
             "configuration": "Release",
-            "targets": ["TunnelDetection"]
+            "targets": ["TunnelDetection", "TsZarrBench"],
+            "nativeToolOptions": ["/m"]
+        },
+        {
+            "name": "local-release-fast",
+            "displayName": "Release 增量构建（仅主程序）",
+            "configurePreset": "local",
+            "configuration": "Release",
+            "targets": ["TunnelDetection"],
+            "nativeToolOptions": ["/m", "/p:BuildProjectReferences=false"]
         }
     ]
 }

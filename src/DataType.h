@@ -78,6 +78,7 @@ typedef struct program_set_struct
     int Table_rows;    // 表格行数
     int big_mil_onoff; // 是否打开异常里程屏蔽功能，1开0关
     int mil_threshold; // 最大里程异常值，比如朔黄可设置成250
+    int SaveZarr;      // 存储格式：1=Zarr v3(TensorStore)，0=旧 camdatx(fwrite)
     program_set_struct()
     {
         ZhuCong = 0;
@@ -101,6 +102,7 @@ typedef struct program_set_struct
         Table_rows = 1000;
         big_mil_onoff = 0;
         mil_threshold = 0;
+        SaveZarr = 1;
     }
 } program_set_struct, *pprogram_set_struct;
 
@@ -119,6 +121,7 @@ typedef struct CAMERAINFORSTRUCT
     int LineFreq;
     int IsFlip;
     int FlipMode;
+    int SaveTransform;   // Zarr 存储前的几何变换：0无,1水平翻转,2垂直翻转,3旋转180,4顺时针90,5逆时针90
     int Gain;
     int isSingle;      // 标识相机是否用于检测单线隧道
     int isDouble;      // 标识相机是否用于检测双线隧道
@@ -161,6 +164,7 @@ typedef struct CAMERAINFORSTRUCT
 
         IsFlip = 0;
         FlipMode = 0;
+        SaveTransform = 0;
         iReserve1 = 0;
         iReserve2 = 0;
         dReserve1 = 0;

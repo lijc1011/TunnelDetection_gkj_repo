@@ -34,3 +34,5 @@ install_manifest.txt
 *.ilk
 *.obj
 *.log
+__pycache__/
+3rdparty/TensorStore/

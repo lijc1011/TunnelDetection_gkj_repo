@@ -674,6 +674,7 @@ void TunnelDetection::DefaultIniFile()
     writeToXmlElement(ProInforElement, "Table_rows", QString::number(g_program_setInfor.Table_rows, 10).toStdString().c_str());
     writeToXmlElement(ProInforElement, "big_mil_onoff", QString::number(g_program_setInfor.big_mil_onoff, 10).toStdString().c_str());
     writeToXmlElement(ProInforElement, "mil_threshold", QString::number(g_program_setInfor.mil_threshold, 10).toStdString().c_str());
+    writeToXmlElement(ProInforElement, "SaveZarr", QString::number(g_program_setInfor.SaveZarr, 10).toStdString().c_str());
 
     ////相机信息CameraInfor///////preprocess_data_struct/////////////////////////////
     TiXmlElement *camera_dataElement = new TiXmlElement("camera_data");
@@ -701,6 +702,7 @@ void TunnelDetection::DefaultIniFile()
         writeToXmlElement(Camera_ITEM, "LineFreq", QString::number(g_cameraInfor[i].LineFreq, 10).toStdString().c_str());
         writeToXmlElement(Camera_ITEM, "IsFlip", QString::number(g_cameraInfor[i].IsFlip, 10).toStdString().c_str());
         writeToXmlElement(Camera_ITEM, "FlipMode", QString::number(g_cameraInfor[i].FlipMode, 10).toStdString().c_str());
+        writeToXmlElement(Camera_ITEM, "SaveTransform", QString::number(g_cameraInfor[i].SaveTransform, 10).toStdString().c_str());
         writeToXmlElement(Camera_ITEM, "Gain", QString::number(g_cameraInfor[i].Gain, 10).toStdString().c_str());
         writeToXmlElement(Camera_ITEM, "isSingle", QString::number(g_cameraInfor[i].isSingle, 10).toStdString().c_str());
         writeToXmlElement(Camera_ITEM, "isDouble", QString::number(g_cameraInfor[i].isDouble, 10).toStdString().c_str());
@@ -814,6 +816,8 @@ bool TunnelDetection::LoadIniFile()
         g_program_setInfor.big_mil_onoff = QString(genElement->FirstChildElement("big_mil_onoff")->FirstChild()->Value()).toInt();
     if ((genElement->FirstChildElement("mil_threshold") != NULL) && (genElement->FirstChildElement("mil_threshold")->FirstChild() != NULL))
         g_program_setInfor.mil_threshold = QString(genElement->FirstChildElement("mil_threshold")->FirstChild()->Value()).toInt();
+    if ((genElement->FirstChildElement("SaveZarr") != NULL) && (genElement->FirstChildElement("SaveZarr")->FirstChild() != NULL))
+        g_program_setInfor.SaveZarr = QString(genElement->FirstChildElement("SaveZarr")->FirstChild()->Value()).toInt();
 
     ////相机信息CAMERAINFORSTRUCT//////////////////////////////////////////////////////////////
     TiXmlElement *preprocess_mark_dataElement = rootElement->FirstChildElement("camera_data");
@@ -855,6 +859,8 @@ bool TunnelDetection::LoadIniFile()
                 g_cameraInfor[i].IsFlip = QString(preprocess_ITEM->FirstChildElement("IsFlip")->FirstChild()->Value()).toInt();
             if ((preprocess_ITEM->FirstChildElement("FlipMode") != NULL) && (preprocess_ITEM->FirstChildElement("FlipMode")->FirstChild() != NULL))
                 g_cameraInfor[i].FlipMode = QString(preprocess_ITEM->FirstChildElement("FlipMode")->FirstChild()->Value()).toInt();
+            if ((preprocess_ITEM->FirstChildElement("SaveTransform") != NULL) && (preprocess_ITEM->FirstChildElement("SaveTransform")->FirstChild() != NULL))
+                g_cameraInfor[i].SaveTransform = QString(preprocess_ITEM->FirstChildElement("SaveTransform")->FirstChild()->Value()).toInt();
             if ((preprocess_ITEM->FirstChildElement("Gain") != NULL) && (preprocess_ITEM->FirstChildElement("Gain")->FirstChild() != NULL))
                 g_cameraInfor[i].Gain = QString(preprocess_ITEM->FirstChildElement("Gain")->FirstChild()->Value()).toInt();
             if ((preprocess_ITEM->FirstChildElement("isSingle") != NULL) && (preprocess_ITEM->FirstChildElement("isSingle")->FirstChild() != NULL))

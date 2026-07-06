@@ -51,4 +51,37 @@ git commit -m "说明本次修改"
 git push origin main
 ```
 
-未完成的工作应提交到临时分支并推送；不要依赖 `git stash` 跨电脑。不要提交 `CMakeUserPresets.json`、`build/`、`bin/` 或 DLL/PDB 等构建产物。
+未完成的工作应提交到临时分支并推送；不要提交 `CMakeUserPresets.json`、`build/`、`bin/` 或 DLL/PDB 等构建产物。不要依赖 `git stash` 跨电脑。
+
+## TensorStore（Zarr v3 存储后端）
+
+采集数据默认写 Zarr v3（`Config.xml` 里 `SaveZarr=1`；设为 `0` 回退旧 `.camdatx` 流程）。
+TensorStore 源码 vendor 在 `3rdparty/TensorStore`，经 FetchContent 并入构建树；
+主程序只链接窄接口桥 `TsZarrBridge.dll`（`src/tszarr/`，C ABI）。
+
+### 首次构建须知
+
+- **需要联网**：首次 configure 会下载 abseil/riegeli 等依赖源码到 `build/local/_deps`。
+- **需要 Python ≥ 3.10**（bazel_to_cmake 在配置期运行；python.org 安装版走注册表即可被找到，无需加 PATH）。
+- 首次构建用 **全量** 预设/任务，之后日常用 **增量**。
+
+### 日常构建（增量，快）
+
+- VS Code 小齿轮/小甲虫/小三角默认走 `local-debug-fast` 预设：
+  `msbuild /p:BuildProjectReferences=false`，只编译主程序，不扫描 TensorStore 的几百个工程。
+- 命令行：`.\tools\cmake.ps1 --build --preset local-debug-fast`
+
+### 何时需要全量构建（任务：Build Debug/Release FULL (TensorStore)）
+
+- 首次克隆/首次构建；
+- 改了 `3rdparty/TensorStore` 或 `src/tszarr/`（桥接层）；
+- 改了根 `CMakeLists.txt`（增量预设跳过 ZERO_CHECK，不会自动重新 configure）。
+
+### 存储格式说明
+
+- 每相机一次检测产出 `<同名>.zarr` 目录（数组 uint8 `[包, 行, 列]`，chunk=一包=一个文件，
+  bytes codec 不压缩）+ 照写的 `.camidx` 索引。像素先按 `SaveTransform`（相机级配置，
+  0无/1水平翻转/2垂直翻转/3旋转180/4顺90/5逆90）变换，再用与 camdatx 相同的
+  文件名密钥 LUT 加密后写入；静态元数据在数组 attributes 里（`encrypted:true` 等）。
+- 写盘基准工具：`bin/<Config>/TsZarrBench.exe <输出目录> [包数] [高] [宽]`，
+  对比现方案 fwrite 与 zarr 异步写并做读回校验。

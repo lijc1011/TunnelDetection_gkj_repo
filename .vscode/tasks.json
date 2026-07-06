@@ -21,6 +21,31 @@
         },
         {
             "label": "Build Debug TunnelDetection",
+            "detail": "增量构建（仅主程序，日常默认；不扫描 TensorStore）",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/tools/cmake.ps1",
+                "--build",
+                "--preset",
+                "local-debug-fast"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Build Debug FULL (TensorStore)",
+            "detail": "全量构建：首次构建或 TensorStore/桥接层变动后使用",
             "type": "shell",
             "command": "powershell.exe",
             "args": [
@@ -36,10 +61,6 @@
             "options": {
                 "cwd": "${workspaceFolder}"
             },
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
             "dependsOn": [
                 "CMake Configure Local"
             ],
@@ -47,6 +68,27 @@
         },
         {
             "label": "Build Release TunnelDetection",
+            "detail": "增量构建（仅主程序）",
+            "type": "shell",
+            "command": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/tools/cmake.ps1",
+                "--build",
+                "--preset",
+                "local-release-fast"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "Build Release FULL (TensorStore)",
+            "detail": "全量构建：首次构建或 TensorStore/桥接层变动后使用",
             "type": "shell",
             "command": "powershell.exe",
             "args": [
