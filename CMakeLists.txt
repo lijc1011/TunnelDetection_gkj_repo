@@ -133,6 +133,13 @@ target_link_libraries(${PROJECT_NAME}
         tinyxml
 )
 
+if(MSVC)
+    # Keep Hikrobot MVS optional at runtime. DALSA-only deployments should not
+    # fail process startup just because MVCameraControl.dll is not installed.
+    target_link_options(${PROJECT_NAME} PRIVATE "/DELAYLOAD:MVCameraControl.dll")
+    target_link_libraries(${PROJECT_NAME} PRIVATE delayimp)
+endif()
+
 if(TUNNEL_USE_Z5)
     target_link_libraries(${PROJECT_NAME} PRIVATE z5)
     target_compile_definitions(${PROJECT_NAME} PRIVATE TUNNEL_Z5_ENABLED)

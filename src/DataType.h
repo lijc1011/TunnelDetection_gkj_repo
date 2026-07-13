@@ -102,7 +102,7 @@ typedef struct program_set_struct
         Table_rows = 1000;
         big_mil_onoff = 0;
         mil_threshold = 0;
-        SaveZarr = 1;
+        SaveZarr = 0;
     }
 } program_set_struct, *pprogram_set_struct;
 
