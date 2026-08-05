@@ -1,5 +1,7 @@
 #include "QSetCameraDlg.h"
 #include "ui_QSetCameraDlg.h"
+#include <QCoreApplication>
+#include <QSaveFile>
 
 QSetCameraDlg::QSetCameraDlg(QWidget *parent)
     : QDialog(parent)
@@ -260,11 +262,27 @@ void QSetCameraDlg::pb_setus_Button()
 }
 void QSetCameraDlg::set_camera_us(int icam,int ivalue)
 {
- 	if (m_cam[icam] != NULL)
+	if (m_cam[icam] != NULL)
 	{
  		if (m_cam[icam]->SetExpTime(ivalue))
 		{
-			qDebug() << g_cameraInfor[icam].Name<<QStringLiteral("曝光：")<< ivalue;
+			double actualValue = 0.0;
+			if (!m_cam[icam]->GetExpTime(actualValue))
+			{
+				qDebug() << g_cameraInfor[icam].Name << QStringLiteral("曝光回读失败，未保存配置：") << ivalue;
+				return;
+			}
+
+			g_cameraInfor[icam].ExposureTime = actualValue;
+			const QString value = QString::number(actualValue, 'f', 2);
+			if (!saveManualCameraValue(icam, "ExposureTime", value))
+			{
+				QMessageBox::warning(this, QStringLiteral("保存失败"),
+					QStringLiteral("曝光已写入相机，但未能保存到 Config.xml。"));
+				return;
+			}
+			LineEdit_us[icam]->setText(QString::number(actualValue, 'f', 0));
+			qDebug() << g_cameraInfor[icam].Name << QStringLiteral("曝光已设置并保存：") << actualValue;
  	 	}
 		else
 			qDebug() << g_cameraInfor[icam].Name << QStringLiteral("设置曝光失败：") << ivalue;
@@ -299,11 +317,65 @@ void QSetCameraDlg::set_camera_gain(int icam, int ivalue)
 	{
 		if (m_cam[icam]->SetCamGain(ivalue))
 		{
-			qDebug() << g_cameraInfor[icam].Name << QStringLiteral("增益：") << ivalue;
+			double actualValue = 0.0;
+			if (!m_cam[icam]->GetCamGain(actualValue))
+			{
+				qDebug() << g_cameraInfor[icam].Name << QStringLiteral("增益回读失败，未保存配置：") << ivalue;
+				return;
+			}
+
+			const int storedValue = qRound(actualValue);
+			g_cameraInfor[icam].Gain = storedValue;
+			if (!saveManualCameraValue(icam, "Gain", QString::number(storedValue)))
+			{
+				QMessageBox::warning(this, QStringLiteral("保存失败"),
+					QStringLiteral("增益已写入相机，但未能保存到 Config.xml。"));
+				return;
+			}
+			LineEdit_gain[icam]->setText(QString::number(actualValue, 'f', 0));
+			qDebug() << g_cameraInfor[icam].Name << QStringLiteral("增益已设置并保存：") << actualValue;
 		}
 		else
 			qDebug() << g_cameraInfor[icam].Name << QStringLiteral("设置增益失败：") << ivalue;
 	}
+}
+
+bool QSetCameraDlg::saveManualCameraValue(int cameraIndex, const char *valueName, const QString &value)
+{
+	const QString configPath = QCoreApplication::applicationDirPath() + "/Config.xml";
+	TiXmlDocument document(configPath.toLocal8Bit().constData());
+	if (!document.LoadFile())
+		return false;
+
+	TiXmlElement *root = document.RootElement();
+	TiXmlElement *cameraData = root ? root->FirstChildElement("camera_data") : NULL;
+	const QString cameraName = QString("camera%1").arg(cameraIndex + 1, 2, 10, QChar('0'));
+	TiXmlElement *camera = cameraData ? cameraData->FirstChildElement(cameraName.toLocal8Bit().constData()) : NULL;
+	if (camera == NULL)
+		return false;
+
+	TiXmlElement *element = camera->FirstChildElement(valueName);
+	if (element == NULL)
+	{
+		element = new TiXmlElement(valueName);
+		camera->LinkEndChild(element);
+	}
+	if (element->FirstChild() != NULL)
+		element->FirstChild()->SetValue(value.toLocal8Bit().constData());
+	else
+		element->LinkEndChild(new TiXmlText(value.toLocal8Bit().constData()));
+
+	TiXmlPrinter printer;
+	document.Accept(&printer);
+	QSaveFile output(configPath);
+	if (!output.open(QIODevice::WriteOnly))
+		return false;
+	if (output.write(printer.CStr(), static_cast<qint64>(printer.Size())) != static_cast<qint64>(printer.Size()))
+	{
+		output.cancelWriting();
+		return false;
+	}
+	return output.commit();
 }
 
 void QSetCameraDlg::pb_setfreg_Button()

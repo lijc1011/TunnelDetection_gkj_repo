@@ -99,6 +99,8 @@ public:
      QLineEdit *LineEdit_gain[MAXCAMNUM];
      QLineEdit *LineEdit_smil;   // 人为设置的起始里程
      QLineEdit *LineEdit_emil;   // 人为设置的终止里程
+     QLineEdit *LineEdit_GD_smil; // 无砟轨道主界面起始里程输入
+     QLineEdit *LineEdit_GD_emil; // 无砟轨道主界面终止里程输入
      QLineEdit *LineEdit_cunchu; // 存储盘容量
      int m_tableWidget_cow;   // 列表控件的最大列数
      int m_tableWidget_width; // 列表控件的最小宽度

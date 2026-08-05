@@ -49,6 +49,7 @@ private slots :
 	void onBrightnessModeChanged(); //手动/自动亮度切换
     
 private:
+    bool saveManualCameraValue(int cameraIndex, const char *valueName, const QString &value);
     Ui::QSetCameraDlg *ui;
 };
 

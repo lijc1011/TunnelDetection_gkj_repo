@@ -35,15 +35,24 @@ QSetMileageDlg::QSetMileageDlg(QMilThd *milDetect, QWidget *parent)
     m_pButtonGroup->addButton(ui->radioButton_pulse);
 
     ui->radioButton_gyk->setCheckable(true);
-    ui->radioButton_gyk->setChecked(true);
+    if (g_program_setInfor.ObjectType == QStringLiteral("无砟轨道"))
+    {
+        ui->radioButton_pulse->setChecked(true);
+        ui->radioButton_gyk->setEnabled(false);
+        ui->groupBox_set->hide();
+        m_milMode = 1;
+    }
+    else
+    {
+        ui->radioButton_gyk->setChecked(true);
+        m_milMode = 0;
+    }
     connect(m_pButtonGroup, SIGNAL(buttonClicked(QAbstractButton *)), this, SLOT(onpButtonGroupClicked(QAbstractButton *)));
     //	ui->groupBox->hide();
 
     ui->lineEdit_pulse_width->setText(QString::number(g_program_setInfor.PulseWidth, 'f', 8)); // 里程，单位是米
 
     timerprogress = NULL;
-    m_milMode = 0;
-
     initStart();
 #if 0
  	//上中下结构
@@ -146,6 +155,12 @@ void QSetMileageDlg::onpButtonGroupClicked(QAbstractButton *button)
 
 void QSetMileageDlg::on_pushButton_set()
 {
+    if (g_program_setInfor.ObjectType == QStringLiteral("无砟轨道"))
+    {
+        this->hide();
+        return;
+    }
+
     QString ss = ui->lineEdit_smil->text();
     QString ee = ui->lineEdit_emil->text();
     emit Mil_over_signals(ss, ee);

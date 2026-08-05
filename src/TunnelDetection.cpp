@@ -25,6 +25,8 @@ TunnelDetection::TunnelDetection(QWidget* parent)
     icow_table_emil = 12;
 
     ReadDefaultPara();
+    LineEdit_GD_smil = NULL;
+    LineEdit_GD_emil = NULL;
 
     for (int i = 0; i < MAXCAMNUM; i++)
     {
@@ -297,7 +299,7 @@ TunnelDetection::TunnelDetection(QWidget* parent)
     int CamLayout_width = qBound(220, screenWidth * 13 / 100, 320);
     if (g_program_setInfor.ObjectType == QStringLiteral("无砟轨道"))
     {
-        CamLayout_width = 300;
+        CamLayout_width = qBound(220, screenWidth * 23 / 100, 300);
     }
     m_tableWidget_width = qMax(760, screenWidth - CamLayout_width * 2 - 20);
     init_tableWidget();
@@ -415,36 +417,82 @@ TunnelDetection::TunnelDetection(QWidget* parent)
     if (g_program_setInfor.ObjectType == QStringLiteral("无砟轨道"))
     {
         ui->tableWidget->hide();
+
+        QGridLayout *gdMileageLayout = new QGridLayout();
+        gdMileageLayout->setContentsMargins(10, 5, 10, 5);
+        gdMileageLayout->setHorizontalSpacing(8);
+        gdMileageLayout->setVerticalSpacing(8);
+
+        QLabel *label_GD_smil = new QLabel(QStringLiteral("起始里程："));
+        QLabel *label_GD_emil = new QLabel(QStringLiteral("终止里程："));
+        QLabel *label_GD_smil_unit = new QLabel(QStringLiteral("公里"));
+        QLabel *label_GD_emil_unit = new QLabel(QStringLiteral("公里"));
+        LineEdit_GD_smil = new QLineEdit(m_strStartMil);
+        LineEdit_GD_emil = new QLineEdit(m_strEndMil);
+        QPushButton *pushButton_GD_setStartMileage = new QPushButton(QStringLiteral("设置"));
+        QPushButton *pushButton_GD_setEndMileage = new QPushButton(QStringLiteral("设置"));
+
+        label_GD_smil->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        label_GD_emil->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        LineEdit_GD_smil->setMinimumWidth(120);
+        LineEdit_GD_emil->setMinimumWidth(120);
+        LineEdit_GD_smil->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        LineEdit_GD_emil->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        pushButton_GD_setStartMileage->setMinimumWidth(70);
+        pushButton_GD_setEndMileage->setMinimumWidth(70);
+
+        gdMileageLayout->addWidget(label_GD_smil, 0, 0);
+        gdMileageLayout->addWidget(LineEdit_GD_smil, 0, 1);
+        gdMileageLayout->addWidget(label_GD_smil_unit, 0, 2);
+        gdMileageLayout->addWidget(pushButton_GD_setStartMileage, 0, 3);
+        gdMileageLayout->addWidget(label_GD_emil, 1, 0);
+        gdMileageLayout->addWidget(LineEdit_GD_emil, 1, 1);
+        gdMileageLayout->addWidget(label_GD_emil_unit, 1, 2);
+        gdMileageLayout->addWidget(pushButton_GD_setEndMileage, 1, 3);
+        connect(pushButton_GD_setStartMileage, &QPushButton::clicked, this, [this]() {
+            Mil_over_slots(LineEdit_GD_smil->text(), m_strEndMil);
+        });
+        connect(pushButton_GD_setEndMileage, &QPushButton::clicked, this, [this]() {
+            Mil_over_slots(m_strStartMil, LineEdit_GD_emil->text());
+        });
+
         QHBoxLayout *gdLayout = new QHBoxLayout();
-        gdLayout->setContentsMargins(1, 1, 1, 1);  // 对话框左右边距10
-        gdLayout->setSpacing(1); // 上下边距
+        gdLayout->setContentsMargins(10, 0, 10, 0);
+        gdLayout->setSpacing(0);
 
-        ui->pushButton_GD_openzhaoming->setMinimumWidth(260);
-        ui->pushButton_GD_openzhaoming->setMinimumHeight(80);
+        ui->pushButton_GD_openzhaoming->setText(QStringLiteral("打开光源"));
+        ui->pushButton_GD_openzhaoming->setMinimumWidth(130);
+        ui->pushButton_GD_openzhaoming->setMaximumWidth(200);
+        ui->pushButton_GD_openzhaoming->setMinimumHeight(56);
+        ui->pushButton_GD_openzhaoming->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         connect(ui->pushButton_GD_openzhaoming, &QPushButton::clicked, this, &TunnelDetection::pushButton_GD_openzhaomingSlot);
-        gdLayout->addWidget(ui->pushButton_GD_openzhaoming);
         gdLayout->addStretch(1);
+        gdLayout->addWidget(ui->pushButton_GD_openzhaoming);
+        gdLayout->addSpacing(qBound(20, screenWidth / 50, 40));
 
-        ui->pushButton_GD_closemingzhao->setMinimumWidth(260);
-        ui->pushButton_GD_closemingzhao->setMinimumHeight(80);
+        ui->pushButton_GD_closemingzhao->setText(QStringLiteral("关闭光源"));
+        ui->pushButton_GD_closemingzhao->setMinimumWidth(130);
+        ui->pushButton_GD_closemingzhao->setMaximumWidth(200);
+        ui->pushButton_GD_closemingzhao->setMinimumHeight(56);
+        ui->pushButton_GD_closemingzhao->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         connect(ui->pushButton_GD_closemingzhao, &QPushButton::clicked, this, &TunnelDetection::pushButton_GD_closemingzhaoSlot);
         gdLayout->addWidget(ui->pushButton_GD_closemingzhao);
         gdLayout->addStretch(1);
 
-        QWidget *gdWidget = new QWidget();
-        gdWidget->setMaximumWidth(500 /*CamLayout_width*/);
-        gdWidget->setMaximumHeight(200);
-        gdWidget->setLayout(gdLayout);
+        QVBoxLayout *gd2Layout = new QVBoxLayout();
+        gd2Layout->setContentsMargins(8, 8, 8, 8);
+        gd2Layout->setSpacing(14);
+        gd2Layout->addStretch(6);
+        gd2Layout->addLayout(gdMileageLayout);
+        gd2Layout->addLayout(gdLayout);
+        gd2Layout->addStretch(4);
 
-        QHBoxLayout *gd2Layout = new QHBoxLayout();
-        gd2Layout->setContentsMargins(1, 1, 1, 1);  // 对话框左右边距10
-        gd2Layout->setSpacing(1); // 上下边距
-        gd2Layout->addWidget(gdWidget);
-
-        QGroupBox *gd_groupBox = new QGroupBox(QStringLiteral("无砟轨道小车开闭照明"));
+        QGroupBox *gd_groupBox = new QGroupBox(QStringLiteral("无砟轨道小车检测控制"));
         gd_groupBox->setAlignment(Qt::AlignCenter);
-        gd_groupBox->setMaximumWidth(600 /*CamLayout_width*/);
-        gd_groupBox->setMinimumHeight(250);
+        const int gdPanelWidth = qBound(400, screenWidth - CamLayout_width * 2 - 36, 650);
+        gd_groupBox->setMaximumWidth(gdPanelWidth);
+        gd_groupBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        gd_groupBox->setMinimumHeight(330);
         gd_groupBox->setLayout(gd2Layout);
         downLayout->addWidget(gd_groupBox);
     }
@@ -1361,6 +1409,11 @@ void TunnelDetection::Mil_over_slots(QString ss, QString ee)
     m_strEndMil = ee;
     LineEdit_smil->setText(ss);
     LineEdit_emil->setText(ee);
+    if (LineEdit_GD_smil != NULL && LineEdit_GD_emil != NULL)
+    {
+        LineEdit_GD_smil->setText(ss);
+        LineEdit_GD_emil->setText(ee);
+    }
 
     if (g_program_setInfor.ObjectType == QStringLiteral("无砟轨道"))
     {
@@ -1382,7 +1435,9 @@ void TunnelDetection::Mil_time_slots(double dmil, double dspeed)
 {
     if (g_program_setInfor.ObjectType == QStringLiteral("无砟轨道"))
     {
-        double showmil = m_strStartMil.toDouble() + dmil / 1000;
+        const MILEAGEINFORSTRUCT ms = m_milDirect->GetMileageInfor();
+        const double pulseMileageKm = static_cast<double>(ms.iPulseCount) * g_program_setInfor.PulseWidth / 1000.0 / 1000.0;
+        const double showmil = m_strStartMil.toDouble() + pulseMileageKm;
         ui->lcdNumber_nmil->display(showmil); // 显示数字123456
         ui->lcdNumber_spe->display(dspeed);   // 显示数字123456
     }
@@ -1927,9 +1982,27 @@ bool TunnelDetection::initCamera(int iSumNum)
             label_isConnect[i]->setText(QStringLiteral("已连接"));
         g_isConnect[i] = true;
 
-        // 若连接成功，则设置曝光和增益g_cameraInfor[i].dExposureTime
-        //  		m_pCamera[i]->SetExpTime(g_cameraInfor[i].dExposureTime);
-        //  		m_pCamera[i]->SetCamGain(g_cameraInfor[i].iReserve1);
+		// Config.xml 是手动参数的权威来源：各品牌相机连接后统一下发并回读。
+		const bool exposureInRange = g_cameraInfor[i].ExposureTime >= g_cameraInfor[i].ExposureTimeMin &&
+			g_cameraInfor[i].ExposureTime <= g_cameraInfor[i].ExposureTimeMax;
+		const bool gainInRange = g_cameraInfor[i].Gain >= g_cameraInfor[i].GainMin &&
+			g_cameraInfor[i].Gain <= g_cameraInfor[i].GainMax;
+		double actualExposure = 0.0;
+		double actualGain = 0.0;
+		const bool exposureOk = exposureInRange &&
+			m_pCamera[i]->SetExpTime(g_cameraInfor[i].ExposureTime) &&
+			m_pCamera[i]->GetExpTime(actualExposure);
+		const bool gainOk = gainInRange &&
+			m_pCamera[i]->SetCamGain(g_cameraInfor[i].Gain) &&
+			m_pCamera[i]->GetCamGain(actualGain);
+		if (!exposureOk)
+			qDebug() << g_cameraInfor[i].Name << QStringLiteral("Config 曝光下发或回读失败：") << g_cameraInfor[i].ExposureTime;
+		else
+			qDebug() << g_cameraInfor[i].Name << QStringLiteral("Config 曝光已生效：") << actualExposure;
+		if (!gainOk)
+			qDebug() << g_cameraInfor[i].Name << QStringLiteral("Config 增益下发或回读失败：") << g_cameraInfor[i].Gain;
+		else
+			qDebug() << g_cameraInfor[i].Name << QStringLiteral("Config 增益已生效：") << actualGain;
     }
 
 #if 1
@@ -2072,6 +2145,10 @@ bool TunnelDetection::openCsv()
     if (m_csvLedgerFile.open(QIODevice::WriteOnly | QIODevice::Text))
     {
         QTextStream stream(&m_csvLedgerFile);
+        // Excel/WPS on Windows may treat a BOM-less CSV as ANSI/GBK.
+        // Write an explicit UTF-8 BOM when the ledger is created.
+        stream.setEncoding(QStringConverter::Utf8);
+        stream.setGenerateByteOrderMark(true);
         stream << QStringLiteral("序号,") << QStringLiteral("设备类型,") << QStringLiteral("路局,") << QStringLiteral("段名,") << QStringLiteral("线名,") << QStringLiteral("线路等级,")
                << QStringLiteral("所在区间,") << QStringLiteral("设备号,") << QStringLiteral("设备名,") << QStringLiteral("设备编码,") << QStringLiteral("行别,") << QStringLiteral("线别,")
                << QStringLiteral("起点里程,") << QStringLiteral("中心里程,") << QStringLiteral("终点里程,") << QStringLiteral("全长,") << QStringLiteral("高度,") << QStringLiteral("检测设备,")
@@ -2088,6 +2165,7 @@ bool TunnelDetection::writeCsv()
     if (m_csvLedgerFile.open(QIODevice::Append | QIODevice::Text))
     {
         QTextStream oneStream(&m_csvLedgerFile);
+        oneStream.setEncoding(QStringConverter::Utf8);
 
         // 当前隧道工作相机的图像文件
         QString imgFileName, idxFileName;

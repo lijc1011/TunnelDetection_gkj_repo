@@ -269,7 +269,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Open Light</string>
+     <string>打开光源</string>
     </property>
    </widget>
    <widget class="QPushButton" name="pushButton_GD_closemingzhao">
@@ -282,7 +282,7 @@
      </rect>
     </property>
     <property name="text">
-     <string>Close Light</string>
+     <string>关闭光源</string>
     </property>
    </widget>
    <widget class="QGraphicsView" name="graphicsView">
