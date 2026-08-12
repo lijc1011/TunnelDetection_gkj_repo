@@ -325,50 +325,142 @@ BOOL CCamera::GetCamGain(double &iGain)
 }
 BOOL CCamera::GetCamFreg(double &iFreg)
 {
-	BOOL tmp = false;
-	m_AcqDevice->GetFeatureValue("TriggerMode", &tmp); 
+	if (m_AcqDevice == NULL)
+	{
+		return FALSE;
+	}
+
+	// 无砟轨道的新 CamLink 相机：
+	// TriggerMode 是枚举类型；
+	// AcquisitionLineRate、measureCC1Rate 是 INT64 整数类型。
+	if ((g_program_setInfor.ObjectType == QStringLiteral("无砟轨道")) &&
+		(g_program_setInfor.CameraType == 1))
+	{
+		BOOL triggerMode = FALSE;
+
+		// Sapera 中枚举底层为 INT32，BOOL 与其大小一致
+		if (!m_AcqDevice->GetFeatureValue("TriggerMode", &triggerMode))
+		{
+			return FALSE;
+		}
+
+		const char *freqFeatureName = NULL;
+
+		if (triggerMode)
+		{
+			// 外触发：读取相机测得的 CC1 输入频率
+			freqFeatureName = "measureCC1Rate";
+		}
+		else
+		{
+			// 内触发：读取相机设置的内部行频
+			freqFeatureName = "AcquisitionLineRate";
+		}
+
+		// 先检查特征是否存在，避免 Sapera 弹错误窗口
+		BOOL isAvailable = FALSE;
+		if (!m_AcqDevice->IsFeatureAvailable(freqFeatureName, &isAvailable) ||
+			!isAvailable)
+		{
+			return FALSE;
+		}
+
+		INT64 freqValue = 0;
+		if (!m_AcqDevice->GetFeatureValue(freqFeatureName, &freqValue))
+		{
+			return FALSE;
+		}
+
+		iFreg = static_cast<double>(freqValue);
+		return TRUE;
+	}
+
+	// 以下保持原逻辑不变，避免影响既有隧道设备
+	BOOL tmp = FALSE;
+	m_AcqDevice->GetFeatureValue("TriggerMode", &tmp);
+
 	if (tmp)
 	{
 		// 获取外触发行频
 		if (m_AcqDevice->GetFeatureValue("lineTriggerInputFrequency", &iFreg))
- 		{
-			return true;
+		{
+			return TRUE;
 		}
-		else
-			return false;
- 	}
+		return FALSE;
+	}
 	else
 	{
 		// 获取内触发行频
 		if (m_AcqDevice->GetFeatureValue("AcquisitionLineRate", &iFreg))
 		{
-			return true;
+			return TRUE;
 		}
-		else
-			return false;
+		return FALSE;
 	}
-	return false;
 }
 BOOL CCamera::SetCamFreg(double iFreg)
 {
-	BOOL tmp = false;
+	if (m_AcqDevice == NULL)
+	{
+		return FALSE;
+	}
+
+	// 仅适配无砟轨道的新 CamLink 相机
+	if ((g_program_setInfor.ObjectType == QStringLiteral("无砟轨道")) &&
+		(g_program_setInfor.CameraType == 1))
+	{
+		BOOL triggerMode = FALSE;
+		if (!m_AcqDevice->GetFeatureValue("TriggerMode", &triggerMode))
+		{
+			return FALSE;
+		}
+
+		// 外触发行频由外部 CC1 信号决定，程序不能设置
+		if (triggerMode)
+		{
+			return FALSE;
+		}
+
+		BOOL isAvailable = FALSE;
+		if (!m_AcqDevice->IsFeatureAvailable(
+				"AcquisitionLineRate", &isAvailable) ||
+			!isAvailable)
+		{
+			return FALSE;
+		}
+
+		if (iFreg <= 0)
+		{
+			return FALSE;
+		}
+
+		// 当前相机的 AcquisitionLineRate 是 Integer 类型
+		const INT64 freqValue =
+			static_cast<INT64>(iFreg + 0.5);
+
+		return m_AcqDevice->SetFeatureValue(
+			"AcquisitionLineRate", freqValue);
+	}
+
+	// 以下保持原逻辑不变
+	BOOL tmp = FALSE;
 	m_AcqDevice->GetFeatureValue("TriggerMode", &tmp);
+
 	if (tmp)
 	{
-		// 设置外触发行频
-		return false;
+		// 外触发行频不能由程序设置
+		return FALSE;
 	}
 	else
 	{
 		// 设置内触发行频
-		if (m_AcqDevice->SetFeatureValue("AcquisitionLineRate", (double)iFreg))
+		if (m_AcqDevice->SetFeatureValue(
+				"AcquisitionLineRate", static_cast<double>(iFreg)))
 		{
-			return true;
+			return TRUE;
 		}
-		else
-			return false;
+		return FALSE;
 	}
-	return false;
 }
 void CCamera::XferCallback(SapXferCallbackInfo *pInfo)
 {
