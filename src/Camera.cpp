@@ -550,22 +550,11 @@ void CCamera::FillFrameTimestamp(SapXferCallbackInfo *pInfo, FRAMEIMAGESTRUCT &f
 		}
 	}
 
-	if (pInfo != NULL)
-	{
-		UINT64 hostTimestamp = 0;
-		if (pInfo->GetHostTimeStamp(&hostTimestamp))
-		{
-			fmst.hostTimestamp = hostTimestamp;
-			fmst.timestampFlags |= FRAME_TIMESTAMP_HOST_VALID;
-		}
-
-		UINT64 auxiliaryTimestamp = 0;
-		if (pInfo->GetAuxiliaryTimeStamp(&auxiliaryTimestamp))
-		{
-			fmst.auxiliaryTimestamp = auxiliaryTimestamp;
-			fmst.timestampFlags |= FRAME_TIMESTAMP_AUXILIARY_VALID;
-		}
-	}
+	// 当前传输回调没有提供有效的 Sapera EventInfo 句柄。
+	// GetHostTimeStamp() 和 GetAuxiliaryTimeStamp() 会通过该句柄读取参数，
+	// 在开始存储后的每帧回调中触发 "Invalid handle (Event Info)"。
+	// 暂时不读取这两个时间戳；设备时间戳仍由上面的 SapBuffer 接口保存。
+	(void)pInfo;
 }
 
 void CCamera::YaSuoDaoFile(unsigned char* pBits,int w,int h,int q, QString strpath)
