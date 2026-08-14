@@ -617,8 +617,10 @@ void TunnelDetection::ReadDefaultPara()
     m_strXB = setting.value("runxingbie").toString();
     m_strMilDir = setting.value("milIncDec").toString();
     m_strChetou = setting.value("chetouDir").toString();
-    m_strStartMil = setting.value("StartMil").toString();
-    m_strEndMil = setting.value("EndMil").toString();
+    // 起止里程属于本次作业数据，每次启动时都由操作人员重新设置，
+    // 不恢复上一次运行保存的值。
+    m_strStartMil.clear();
+    m_strEndMil.clear();
 
     setting.endGroup();
 }
