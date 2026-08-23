@@ -255,9 +255,7 @@ void CHikCamera::WriteToSaveDeque(unsigned char *pData, __int64 dataLen, MV_FRAM
     // 设备/主机时间戳
     FillFrameTimestamp(pFrameInfo, fmst);
 
-    double dtmp = -2;
-    GetCamFreg(dtmp);                      // 2.行频
-    fmst.dHFreqPrecision = dtmp;
+    fmst.dHFreqPrecision = -2;             // 保存线程每取出一包后统一读取一次行频
     fmst.pulseCount = fmst.mil.iPulseCount; // 3.脉冲数
     fmst.gykMil = m_dmil_GYK;              // 4.gyk里程
 

@@ -6,7 +6,7 @@ CAMERAINFORSTRUCT g_cameraInfor[MAXCAMNUM];
 std::vector<tunnel_data_struct> gtunnel_ledger_struct;
 bool g_isConnect[MAXCAMNUM];
 bool g_isShow[MAXCAMNUM];
-bool g_isSave[MAXCAMNUM];
+std::atomic<bool> g_isSave[MAXCAMNUM];
 
 std::atomic<bool> g_autoBrightnessEnabled{false}; // 默认手动亮度
 

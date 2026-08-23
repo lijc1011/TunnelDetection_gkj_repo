@@ -1,4 +1,5 @@
 #pragma once
+#include <atomic>
 #include <mutex>
 #include "Globals.h"
 #include "DataType.h"
@@ -45,7 +46,8 @@ private:
 	int m_IsFullCnt;
 	CAMERAINFORSTRUCT m_camInfor;
 	QMilThd* cam_milDetect;
-	BOOL m_bEnable;
+	std::atomic<bool> m_bEnable;
+	std::atomic<unsigned long long> m_trashFrameCount;
 
 	
 public:

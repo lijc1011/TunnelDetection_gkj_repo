@@ -12,7 +12,8 @@ CCamera::CCamera(CAMERAINFORSTRUCT camInfor, QMilThd* milDetect)
 	m_Buffers = NULL;
 	m_AcqDevice = NULL;
 
-	m_bEnable = FALSE;
+	m_bEnable.store(false);
+	m_trashFrameCount.store(0);
     m_IsFullCnt = 0;
     m_xgflg = FALSE;
 }
@@ -99,7 +100,7 @@ BOOL CCamera::InitCamera_CamLink(char *serverName, int resourceIndex, char *came
 	char pccfPath[256];
 	strcpy(pccfPath, ccfPath.toLocal8Bit().data());
 	m_pAcquisition = new SapAcquisition(loc, pccfPath);
-	m_Buffers = new SapBufferWithTrash(2, m_pAcquisition);
+	m_Buffers = new SapBufferWithTrash(10, m_pAcquisition);
 	m_Xfer = new SapAcqToBuf(m_pAcquisition, m_Buffers, XferCallback, this);
 
 	if (m_pAcquisition && !*m_pAcquisition && !m_pAcquisition->Create()) return FALSE;
@@ -464,8 +465,27 @@ BOOL CCamera::SetCamFreg(double iFreg)
 }
 void CCamera::XferCallback(SapXferCallbackInfo *pInfo)
 {
-	CCamera *pDlg= (CCamera *) pInfo->GetContext();
-	pDlg->CallBackSub(pInfo);
+	if (pInfo == NULL)
+		return;
+
+	CCamera *camera = static_cast<CCamera *>(pInfo->GetContext());
+	if (camera == NULL)
+		return;
+
+	if (pInfo->IsTrash())
+	{
+		const unsigned long long count =
+			camera->m_trashFrameCount.fetch_add(1) + 1;
+		if (count == 1 || (count % 100) == 0)
+		{
+			qWarning() << camera->m_camInfor.Name
+					   << QStringLiteral("Sapera 丢弃不完整帧，累计：")
+					   << count;
+		}
+		return;
+	}
+
+	camera->CallBackSub(pInfo);
 
 	// If grabbing in trash buffer, do not display the image, update the
 	// appropriate number of frames on the status bar instead
@@ -486,16 +506,15 @@ void CCamera::XferCallback(SapXferCallbackInfo *pInfo)
 void CCamera::CallBackSub(SapXferCallbackInfo *pInfo)
 {
 	void* pData = NULL;
-	if(m_Buffers->GetAddress(&pData))
+	if (m_Buffers != NULL &&
+		m_Buffers->GetAddress(&pData) &&
+		pData != NULL)
 	{	
-		if(!m_Buffers->ReleaseAddress(pData))
-			return;
-
 	//	WriteToShowDeque(pData);
 
 #if 1
 
-		if (!m_bEnable) // 相机已连接，未开始存储
+		if (!m_bEnable.load()) // 相机已连接，未开始存储
 		{
 			WriteToShowDeque(pData);
 		//	YaSuoDaoFile((BYTE *)pData,4096,m_camInfor.iHeight,100,_T("D:\\TunnelScanData\\Capture"));
@@ -510,6 +529,12 @@ void CCamera::CallBackSub(SapXferCallbackInfo *pInfo)
 		{
 			m_xgflg = false;
 			ReleaseDeqDuiqi();
+		}
+
+		if (!m_Buffers->ReleaseAddress(pData))
+		{
+			qWarning() << m_camInfor.Name
+					   << QStringLiteral("Sapera 释放图像缓冲地址失败");
 		}
 
 	//	printf ("                                   DeqShowSize: = %zd\tDeqSaveSize: = %zd\n", m_ImgDeqShow.size(),m_ImgDeqSave.size());
@@ -675,6 +700,13 @@ void CCamera::WriteToShowDeque(void* pData)
 
 	{
 		std::lock_guard<std::mutex> lock(m_showMutex);
+		const size_t maxShowFrames = static_cast<size_t>(MAXFRAME) * 2;
+		while (m_ImgDeqShow.size() >= maxShowFrames)
+		{
+			FRAMEIMAGESTRUCT oldFrame = m_ImgDeqShow.front();
+			delete[] oldFrame.pDataPoint;
+			m_ImgDeqShow.pop_front();
+		}
 		m_ImgDeqShow.push_back(fmst);
 	}
 }
@@ -695,9 +727,7 @@ void CCamera::WriteToSaveDeque(void* pData, SapXferCallbackInfo *pInfo)
 	auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(now1.time_since_epoch()).count();
 	fmst.timems = timestamp/*clock()*/;
 	FillFrameTimestamp(pInfo, fmst);
-	double dtmp = -2;
-	GetCamFreg(dtmp); // 2.行频
-	fmst.dHFreqPrecision = dtmp;
+	fmst.dHFreqPrecision = -2; // 保存线程每取出一包后统一读取一次行频
 	fmst.pulseCount = fmst.mil.iPulseCount; // 3.脉冲数
 	fmst.gykMil = m_dmil_GYK;//4.gyk里程
  	memcpy(fmst.pDataPoint, pData,m_camInfor.iSizeFrame);
@@ -735,11 +765,11 @@ BOOL CCamera::IsShowII(void)
  
 void CCamera::StartAcquisition(void)
 {
-	m_bEnable = TRUE;
+	m_bEnable.store(true);
 }
 void CCamera::StopAcquisition(void)
 {
-	m_bEnable = FALSE;
+	m_bEnable.store(false);
 }
 void CCamera::StopCamera()
 {
@@ -756,19 +786,29 @@ void CCamera::StopCamera()
 
 BOOL CCamera::GetShowDeqDataII(unsigned char* pDataBuffer, int isize)
 {
+	std::lock_guard<std::mutex> lock(m_showMutex);
+	if (pDataBuffer == NULL || isize <= 0 ||
+		m_ImgDeqShow.size() < static_cast<size_t>(isize))
 	{
-		std::lock_guard<std::mutex> lock(m_showMutex);
-		for (int j = 0; j < isize; j++)
-		{
-			FRAMEIMAGESTRUCT pft = m_ImgDeqShow.at(j);
-
-			int src = 0;
-			int dst = m_camInfor.iSizeFrame * j;
-			memcpy(pDataBuffer + dst, pft.pDataPoint + src, m_camInfor.iSizeFrame);
-		}
+		return FALSE;
 	}
 
-	ClearShowDeg();
+	// 显示只需要最新的一组连续帧，先丢弃积压的旧帧。
+	while (m_ImgDeqShow.size() > static_cast<size_t>(isize))
+	{
+		FRAMEIMAGESTRUCT oldFrame = m_ImgDeqShow.front();
+		delete[] oldFrame.pDataPoint;
+		m_ImgDeqShow.pop_front();
+	}
+
+	for (int j = 0; j < isize; j++)
+	{
+		FRAMEIMAGESTRUCT frame = m_ImgDeqShow.front();
+		const int dst = m_camInfor.iSizeFrame * j;
+		memcpy(pDataBuffer + dst, frame.pDataPoint, m_camInfor.iSizeFrame);
+		delete[] frame.pDataPoint;
+		m_ImgDeqShow.pop_front();
+	}
 	return TRUE;
 
 

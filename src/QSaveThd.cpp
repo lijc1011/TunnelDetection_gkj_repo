@@ -81,7 +81,7 @@ void QSaveThd::sub_genOrgJpgFun()
 		if (m_isCanRun_org)
 		{
 			// 1.是否获得开始存储的命令
-			if (g_isSave[m_ichl] == false)
+			if (!g_isSave[m_ichl].load())
 			{
 				emit thread_signal_stopsave(m_ichl);
 				continue;
@@ -96,13 +96,28 @@ void QSaveThd::sub_genOrgJpgFun()
 			// 3.若满足条件,则从队列取图片
 			m_cam->GetSaveDeqData(m_pPicture);
 
+			// 行频查询移出相机 DMA 回调，每个 MAXFRAME 数据包只查询一次。
+			double packetFrequency = -2;
+			if (m_cam->GetCamFreg(packetFrequency))
+			{
+				std::fill_n(m_pPicture->picInfor.dHFreqPrecision,
+							MAXFRAME,
+							packetFrequency);
+			}
+
 			// 			QString imgName = QString("cam-%2.jpg").arg(m_ichl + 1, 2, 10, QChar('0'));
 			// 			Capture((BYTE *)m_pPicture->pDataBuffer, m_camInfor.ImageWidth, m_camInfor.PictureHeight, imgName);
 
 			// 4.存文件
-			SaveFrameData(m_pPicture, m_iPicCnt);
+			if (!SaveFrameData(m_pPicture, m_iPicCnt))
+			{
+				m_cam->StopAcquisition();
+				g_isSave[m_ichl].store(false);
+				emit thread_signal_stopsave(m_ichl);
+				continue;
+			}
 			m_iPicCnt++;
-			memset((void *)m_pPicture->pDataBuffer, 0, sizeof(m_pPicture->picInfor.iSizePicture));
+			memset((void *)m_pPicture->pDataBuffer, 0, m_pPicture->iBufferSize);
 
 				emit thread_signal(m_ichl);
 				// 5.释放队列
@@ -172,8 +187,6 @@ BOOL QSaveThd::SaveFrameData(pPICTUREIMAGESTRUCT pPicImg, __int64 isn)
 		if (!tszarr_writer_write_packet(m_tsWriter, isn, pOut, errBuf, sizeof(errBuf)))
 		{
 			qCritical() << "TsZarr write packet" << isn << "failed:" << errBuf;
-			g_isSave[m_ichl] = false; // 停止本通道存储，避免静默丢数据
-			emit thread_signal_stopsave(m_ichl);
 			return FALSE;
 		}
 	}
@@ -187,7 +200,11 @@ BOOL QSaveThd::SaveFrameData(pPICTUREIMAGESTRUCT pPicImg, __int64 isn)
 		{
 			im_encode->encrypt_data((char*)pPicImg->pDataBuffer, pPicImg->iBufferSize);
 		}
-		int a = fwrite(pPicImg->pDataBuffer, pPicImg->iBufferSize, 1, lpFile_camData);
+		if (fwrite(pPicImg->pDataBuffer, pPicImg->iBufferSize, 1, lpFile_camData) != 1)
+		{
+			qCritical() << "camdatx write packet" << isn << "failed";
+			return FALSE;
+		}
 	}
 
 	// 再存camidx，pPicImg.picInfor
@@ -196,21 +213,30 @@ BOOL QSaveThd::SaveFrameData(pPICTUREIMAGESTRUCT pPicImg, __int64 isn)
 	__int64 tmp = pPicImg->picInfor.iSizePicture;
 	pPicImg->picInfor.startPosition = isn*tmp;
 	pPicImg->picInfor.recordDimension = pPicImg->picInfor.iSizePicture;
-	int b = fwrite(&pPicImg->picInfor, sizeof(PICTUREINFORSTRUCT), 1, lpFile_camIdx);
-
+	if (fwrite(&pPicImg->picInfor, sizeof(PICTUREINFORSTRUCT), 1, lpFile_camIdx) != 1)
+	{
+		qCritical() << "camidx write packet" << isn << "failed";
+		return FALSE;
+	}
 
 	return TRUE;
 }
 
 void QSaveThd::StartSave(QString str_path, QString str_file)
 {
-	g_isSave[m_ichl] = true;
+	// 文件句柄全部准备成功后才允许相机回调进入保存队列。
+	g_isSave[m_ichl].store(false);
 
 	str_path += "\\";
 	str_path += str_file;
 
 	// 先打开相机数据索引文件（zarr attributes 需要索引文件名）
 	OpenCamIdxSaveFile(str_path);
+	if (lpFile_camIdx == NULL)
+	{
+		qCritical() << "Open camidx failed:" << m_strAllfile_camIdx;
+		return;
+	}
 
 	// 打开相机数据存储：zarr 模式建 zarr 目录，否则打开 .camdatx 文件
 	if (m_zarrMode)
@@ -222,10 +248,17 @@ void QSaveThd::StartSave(QString str_path, QString str_file)
 		OpenCamDataSaveFile(str_path);
 	}
 
+	if ((m_zarrMode && m_tsWriter == NULL) ||
+		(!m_zarrMode && lpFile_camData == NULL))
+	{
+		qCritical() << "Open camera data target failed:" << str_path;
+		CloseSaveFile();
+		return;
+	}
+
 	m_iPicCnt = 0; // 每次存储前，序号归零
 	m_pPicture->picInfor.startPosition = 0;
-
-
+	g_isSave[m_ichl].store(true);
 }
 void QSaveThd::CreateEncryptorFromFileName(const QString &strAllFile)
 {
@@ -358,7 +391,7 @@ void QSaveThd::OpenCamIdxSaveFile(QString str_path_file)
 }
 void QSaveThd::StopSave()
 {
-	g_isSave[m_ichl] = false;
+	g_isSave[m_ichl].store(false);
 	StopSaveImg();
 }
 void QSaveThd::StopSaveImg(void)

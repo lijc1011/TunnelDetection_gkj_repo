@@ -33,7 +33,7 @@ TunnelDetection::TunnelDetection(QWidget* parent)
         // 相机初始状态
         g_isConnect[i] = false; // 未连接
         g_isShow[i] = true;     // 只显示
-        g_isSave[i] = false;    // 先不存储
+        g_isSave[i].store(false); // 先不存储
 
         m_pSaveImg[i] = NULL;
         m_pCamera[i] = NULL;
@@ -2908,13 +2908,13 @@ void TunnelDetection::startAcqActionSlot()
             str_FileName += m_strChetou;
             str_FileName += QStringLiteral(".camdatx.tmp");
 
-            if (m_pCamera[i] != NULL)
-            {
-                m_pCamera[i]->StartAcquisition();
-            }
             if (m_pSaveImg[i] != NULL)
             {
                 m_pSaveImg[i]->StartSave(str_path, str_FileName);
+            }
+            if (m_pCamera[i] != NULL && g_isSave[i].load())
+            {
+                m_pCamera[i]->StartAcquisition();
             }
 
             qDebug() << str_FileName;
@@ -2977,13 +2977,13 @@ void TunnelDetection::startSaveImage(QString sdNumber, QString sdName)
             str_FileName += m_strChetou;
             str_FileName += QStringLiteral(".camdatx.tmp");
 
-            if (m_pCamera[i] != NULL)
-            {
-                m_pCamera[i]->StartAcquisition();
-            }
             if (m_pSaveImg[i] != NULL)
             {
                 m_pSaveImg[i]->StartSave(str_path, str_FileName);
+            }
+            if (m_pCamera[i] != NULL && g_isSave[i].load())
+            {
+                m_pCamera[i]->StartAcquisition();
             }
 
             qDebug() << str_FileName;
