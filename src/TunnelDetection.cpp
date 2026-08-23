@@ -1438,8 +1438,9 @@ void TunnelDetection::Mil_time_slots(double dmil, double dspeed)
     if (g_program_setInfor.ObjectType == QStringLiteral("无砟轨道"))
     {
         const MILEAGEINFORSTRUCT ms = m_milDirect->GetMileageInfor();
-        const double pulseMileageKm = static_cast<double>(ms.iPulseCount) * g_program_setInfor.PulseWidth / 1000.0 / 1000.0;
-        const double showmil = m_strStartMil.toDouble() + pulseMileageKm;
+        const double pulseMileageKm = qAbs(static_cast<double>(ms.iPulseCount)) * g_program_setInfor.PulseWidth / 1000.0 / 1000.0;
+        const double showmil = m_strStartMil.toDouble() +
+                               (m_strMilDir == QStringLiteral("减小") ? -pulseMileageKm : pulseMileageKm);
         ui->lcdNumber_nmil->display(showmil); // 显示数字123456
         ui->lcdNumber_spe->display(dspeed);   // 显示数字123456
     }
