@@ -30,6 +30,7 @@ public:
 	// 亮度模式开关（手动/自动亮度），总开关写全局 g_autoBrightnessEnabled
 	QRadioButton *m_radioManual;
 	QRadioButton *m_radioAuto;
+	int m_autoStatusRefreshCounter = 0;
 
 	void show_us();
 	void show_gain();

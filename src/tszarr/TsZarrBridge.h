@@ -32,11 +32,12 @@ struct TsZarrWriterOptions {
     std::int64_t packet_width;       // 一包的行字节数（变换后；彩色相机 = 像素宽*3）
     std::int64_t initial_capacity;   // packet 维初始容量（包数），<=0 取默认 256
     std::int64_t max_pending;        // 在途异步写上限（包数），<=0 取默认 8
+    int overwrite_existing;          // 1=明确覆盖；0=目标存在即失败（采集默认必须为0）
     const char* attributes_json_utf8; // 可选：合入 zarr attributes 的 JSON 对象字符串，可为 null
 };
 
 // 创建 Zarr v3 数组并返回写句柄；失败返回 null 并填充 error。
-// array_path_utf8 为数组根目录；若已存在则整体覆盖（与 fopen "wb" 语义一致）。
+// array_path_utf8 为数组根目录；默认拒绝覆盖，只有 overwrite_existing=1 才覆盖。
 TSZARR_API void* tszarr_writer_create(const char* array_path_utf8,
                                       const TsZarrWriterOptions* options,
                                       char* error, std::size_t error_size);

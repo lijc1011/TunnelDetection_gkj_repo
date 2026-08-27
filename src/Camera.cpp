@@ -273,6 +273,8 @@ BOOL CCamera::DestroyObjects()
 }
 BOOL CCamera::SetExpTime(double itime)
 {
+	std::lock_guard<std::mutex> lock(m_parameterMutex);
+	if (m_AcqDevice == NULL) return FALSE;
 	// BOOL GetFeatureValue(const char *featureName, double *featureValue);
 // 	double dtmp = -2;
 //   	m_AcqDevice->GetFeatureValue("ExposureTime", &dtmp);
@@ -291,10 +293,12 @@ BOOL CCamera::SetExpTime(double itime)
 	else
 		return FALSE;
 }
-BOOL CCamera::SetCamGain(int iGain)
+BOOL CCamera::SetCamGain(double iGain)
 {
+	std::lock_guard<std::mutex> lock(m_parameterMutex);
+	if (m_AcqDevice == NULL) return FALSE;
 	// 设置增益
-	if (m_AcqDevice->SetFeatureValue("Gain",(double)iGain)) 
+	if (m_AcqDevice->SetFeatureValue("Gain", iGain))
 	{
 		// 		CString str;
 		// 		str. Format(_T("设置增益：%d"),iGain);
@@ -306,6 +310,8 @@ BOOL CCamera::SetCamGain(int iGain)
 }
 BOOL CCamera::GetExpTime(double &itime)
 {
+	std::lock_guard<std::mutex> lock(m_parameterMutex);
+	if (m_AcqDevice == NULL) return FALSE;
 	// 获取曝光时间
 	if (m_AcqDevice->GetFeatureValue("ExposureTime", &itime))
 	{
@@ -316,6 +322,8 @@ BOOL CCamera::GetExpTime(double &itime)
 }
 BOOL CCamera::GetCamGain(double &iGain)
 {
+	std::lock_guard<std::mutex> lock(m_parameterMutex);
+	if (m_AcqDevice == NULL) return FALSE;
 	// 获取增益
 	if (m_AcqDevice->GetFeatureValue("Gain", &iGain))
 	{
@@ -323,6 +331,54 @@ BOOL CCamera::GetCamGain(double &iGain)
 	}
 	else
 		return false;
+}
+
+BOOL CCamera::BeginSoftwareAutoBrightness()
+{
+	std::lock_guard<std::mutex> lock(m_parameterMutex);
+	if (m_AcqDevice == NULL) return FALSE;
+	if (m_autoBrightnessOverrideActive) return TRUE;
+
+	char value[64] = {0};
+	m_savedExposureAutoValid = m_AcqDevice->GetFeatureValue("ExposureAuto", value, sizeof(value));
+	if (m_savedExposureAutoValid) m_savedExposureAuto = value;
+	memset(value, 0, sizeof(value));
+	m_savedGainAutoValid = m_AcqDevice->GetFeatureValue("GainAuto", value, sizeof(value));
+	if (m_savedGainAutoValid) m_savedGainAuto = value;
+
+	// 部分DALSA/CamLink型号没有这两个节点；这通常表示相机本身就是手动参数，
+	// 不应因此阻止软件自动亮度工作。
+	bool exposureDisabled = true;
+	bool gainDisabled = true;
+	if (m_savedExposureAutoValid && _stricmp(m_savedExposureAuto.c_str(), "Off") != 0)
+		exposureDisabled = m_AcqDevice->SetFeatureValue("ExposureAuto", "Off") ||
+			m_AcqDevice->SetFeatureValue("ExposureAuto", FALSE);
+	if (m_savedGainAutoValid && _stricmp(m_savedGainAuto.c_str(), "Off") != 0)
+		gainDisabled = m_AcqDevice->SetFeatureValue("GainAuto", "Off") ||
+			m_AcqDevice->SetFeatureValue("GainAuto", FALSE);
+	if (!exposureDisabled || !gainDisabled)
+	{
+		if (m_savedExposureAutoValid)
+			m_AcqDevice->SetFeatureValue("ExposureAuto", m_savedExposureAuto.c_str());
+		if (m_savedGainAutoValid)
+			m_AcqDevice->SetFeatureValue("GainAuto", m_savedGainAuto.c_str());
+		return FALSE;
+	}
+	m_autoBrightnessOverrideActive = true;
+	return TRUE;
+}
+
+void CCamera::EndSoftwareAutoBrightness()
+{
+	std::lock_guard<std::mutex> lock(m_parameterMutex);
+	if (m_AcqDevice == NULL || !m_autoBrightnessOverrideActive) return;
+	if (m_savedExposureAutoValid)
+		m_AcqDevice->SetFeatureValue("ExposureAuto", m_savedExposureAuto.c_str());
+	if (m_savedGainAutoValid)
+		m_AcqDevice->SetFeatureValue("GainAuto", m_savedGainAuto.c_str());
+	m_autoBrightnessOverrideActive = false;
+	m_savedExposureAutoValid = false;
+	m_savedGainAutoValid = false;
 }
 BOOL CCamera::GetCamFreg(double &iFreg)
 {

@@ -1,10 +1,12 @@
 #include "TunnelDetection.h"
+#include "FieldLogger.h"
 
 
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+    FieldLogger::install();
 #if 0
     std::cout << "Current path is: " << std::filesystem::current_path() << std::endl;
 
@@ -176,5 +178,7 @@ int main(int argc, char *argv[])
     w.showMaximized();
     w.show();
 
-    return a.exec();
+    const int result = a.exec();
+    FieldLogger::shutdown();
+    return result;
 }

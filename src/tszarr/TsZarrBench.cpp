@@ -17,6 +17,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -72,15 +73,36 @@ void preparePacket(std::vector<std::uint8_t>& packet, const std::vector<std::uin
 
 int main(int argc, char** argv)
 {
+    const bool selfTest = argc == 2 && std::strcmp(argv[1], "--self-test") == 0;
     if (argc < 2) {
-        std::printf("usage: TsZarrBench <out_dir> [packets=64] [height=4096] [width=4096]\n");
+        std::printf("usage: TsZarrBench --self-test\n"
+                    "       TsZarrBench <out_dir> [packets=64] [height=4096] [width=4096]\n");
         return 1;
     }
-    const std::string outDir = argv[1];          // 本地编码：给 fopen 用
-    const std::string outDirUtf8 = argvToUtf8(argv[1]);  // UTF-8：给桥用
-    const std::int64_t packets = argc > 2 ? std::atoll(argv[2]) : 64;
-    const std::int64_t height = argc > 3 ? std::atoll(argv[3]) : 4096;
-    const std::int64_t width = argc > 4 ? std::atoll(argv[4]) : 4096;
+    std::filesystem::path selfTestDir;
+    std::string outDir;
+    std::string outDirUtf8;
+    std::int64_t packets = argc > 2 ? std::atoll(argv[2]) : 64;
+    std::int64_t height = argc > 3 ? std::atoll(argv[3]) : 4096;
+    std::int64_t width = argc > 4 ? std::atoll(argv[4]) : 4096;
+    if (selfTest) {
+        selfTestDir = std::filesystem::temp_directory_path()
+                      / ("TunnelDetection_ZarrSelfTest_" + std::to_string(GetCurrentProcessId()));
+        std::error_code ec;
+        std::filesystem::remove_all(selfTestDir, ec);
+        if (!std::filesystem::create_directories(selfTestDir, ec) || ec) {
+            std::printf("SELF-TEST FAIL: cannot create %s\n", selfTestDir.string().c_str());
+            return 1;
+        }
+        outDir = selfTestDir.string();
+        outDirUtf8 = outDir;
+        packets = 5;
+        height = 64;
+        width = 96;
+    } else {
+        outDir = argv[1];                       // 本地编码：给 fopen 用
+        outDirUtf8 = argvToUtf8(argv[1]);       // UTF-8：给桥用
+    }
     const std::int64_t packetBytes = height * width;
     const double totalMB = static_cast<double>(packetBytes) * packets / (1024.0 * 1024.0);
 
@@ -92,6 +114,13 @@ int main(int argc, char** argv)
     std::vector<std::uint8_t> base(static_cast<std::size_t>(packetBytes));
     std::vector<std::uint8_t> packet(static_cast<std::size_t>(packetBytes));
     fillBasePacket(base, height, width);
+
+    const std::filesystem::path rawOutput = std::filesystem::path(outDir) / "bench_raw.camdatx";
+    const std::filesystem::path zarrOutput = std::filesystem::path(outDir) / "bench_zarr.zarr";
+    if (std::filesystem::exists(rawOutput) || std::filesystem::exists(zarrOutput)) {
+        std::printf("refusing to overwrite existing benchmark output in %s\n", outDir.c_str());
+        return 2;
+    }
 
     // ---- A. 现方案：LUT 加密 + fwrite 单文件 ----
     {
@@ -124,6 +153,7 @@ int main(int argc, char** argv)
         opts.packet_width = width;
         opts.initial_capacity = 16;  // 故意偏小，顺带覆盖运行中扩容路径
         opts.max_pending = 8;
+        opts.overwrite_existing = 0;
         opts.attributes_json_utf8 = "{\"encrypted\":true,\"source\":\"TsZarrBench\"}";
 
         void* writer = tszarr_writer_create(zarrPath.c_str(), &opts, err, sizeof(err));
@@ -178,6 +208,25 @@ int main(int argc, char** argv)
         }
         std::printf("[zarr] verify OK (packet 0 and %lld round-trip identical)\n",
                     static_cast<long long>(packets - 1));
+
+        // 默认覆盖保护必须生效；这是现场安全写入的回归测试。
+        void* duplicate = tszarr_writer_create(zarrPath.c_str(), &opts, err, sizeof(err));
+        if (duplicate != nullptr) {
+            tszarr_writer_close(duplicate, 0, err, sizeof(err));
+            std::printf("[zarr] SAFE-OVERWRITE TEST FAIL\n");
+            return 1;
+        }
+        std::printf("[zarr] safe-overwrite refusal OK\n");
+    }
+    if (selfTest) {
+        std::error_code ec;
+        std::filesystem::remove_all(selfTestDir, ec);
+        if (ec) {
+            std::printf("SELF-TEST PASS (temporary output retained: %s)\n",
+                        selfTestDir.string().c_str());
+        } else {
+            std::printf("FIELD SELF-TEST PASS\n");
+        }
     }
     return 0;
 }

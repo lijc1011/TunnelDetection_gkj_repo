@@ -429,7 +429,17 @@ void QSetCameraDlg::timerUpDate_deque()
 	// 让用户看到 AE 动态调整过程。手动模式不刷新，保留用户手填值。
 	if (g_autoBrightnessEnabled.load())
 	{
-		show_us();
-		show_gain();
+		// 队列显示仍保持原来的10ms刷新；相机参数回读在自动模式下降到500ms一次，
+		// 避免UI线程以100Hz并发访问海康/DALSA参数节点。
+		if (++m_autoStatusRefreshCounter >= 50)
+		{
+			m_autoStatusRefreshCounter = 0;
+			show_us();
+			show_gain();
+		}
+	}
+	else
+	{
+		m_autoStatusRefreshCounter = 0;
 	}
 }

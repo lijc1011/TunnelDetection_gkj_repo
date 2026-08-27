@@ -32,10 +32,15 @@ public:
     // 参数：曝光/增益/行频
     virtual BOOL SetExpTime(double itime) = 0;
     virtual BOOL GetExpTime(double &itime) = 0;
-    virtual BOOL SetCamGain(int iGain) = 0;
+    virtual BOOL SetCamGain(double iGain) = 0;
     virtual BOOL GetCamGain(double &iGain) = 0;
     virtual BOOL GetCamFreg(double &iFreg) = 0;
     virtual BOOL SetCamFreg(double iFreg) = 0;
+
+    // 软件自动亮度进入/退出钩子。进入时临时关闭相机内部AE/AG，退出时恢复原状态。
+    // 仅由勾选自动亮度后的控制线程调用，手动模式不会调用。
+    virtual BOOL BeginSoftwareAutoBrightness() = 0;
+    virtual void EndSoftwareAutoBrightness() = 0;
 
     // 队列长度查询
     virtual _int64 get_ImgDeqShow_Size() = 0;

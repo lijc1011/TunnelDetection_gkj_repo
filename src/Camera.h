@@ -41,6 +41,7 @@ private:
 	//////////////////////////////////////////////////////////////////////////
 	std::mutex m_showMutex;
 	std::mutex m_saveMutex;
+	std::mutex m_parameterMutex;
 	deque<FRAMEIMAGESTRUCT> m_ImgDeqShow;
 	deque<FRAMEIMAGESTRUCT> m_ImgDeqSave;
 	int m_IsFullCnt;
@@ -68,10 +69,12 @@ public:
 	BOOL SetExpTime(double itime);
 	BOOL GetExpTime(double &itime);
 
-	BOOL SetCamGain(int iGain);
+	BOOL SetCamGain(double iGain);
 	BOOL GetCamGain(double &iGain);
 	BOOL GetCamFreg(double &iFreg);
 	BOOL SetCamFreg(double iFreg);
+	BOOL BeginSoftwareAutoBrightness();
+	void EndSoftwareAutoBrightness();
 
 	BOOL ClearShowAndSaveDeque();
 
@@ -79,6 +82,12 @@ public:
 	_int64 get_ImgDeqSave_Size();
 
 private:
+	bool m_autoBrightnessOverrideActive = false;
+	bool m_savedExposureAutoValid = false;
+	bool m_savedGainAutoValid = false;
+	std::string m_savedExposureAuto;
+	std::string m_savedGainAuto;
+
 	static void XferCallback(SapXferCallbackInfo *pInfo);
 	void CallBackSub(SapXferCallbackInfo *pInfo);
 	BOOL LoadXML(char* lpPath);

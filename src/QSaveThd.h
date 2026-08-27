@@ -5,6 +5,9 @@
 #include "DataType.h"
 #include "Camera.h"
 #include "tszarr/TsZarrBridge.h"
+#include "ZarrSessionRules.h"
+
+#include <QByteArray>
 
 using namespace std;
 class QSaveThd : public QObject
@@ -26,8 +29,8 @@ public:
 	static void genOrgJpgFun(QSaveThd* pParameter);
 	void sub_genOrgJpgFun();
 	std::mutex my_lock_org;
-	bool m_isBreakThd_org;
-	bool m_isCanRun_org;
+	std::atomic<bool> m_isBreakThd_org{false};
+	std::atomic<bool> m_isCanRun_org{false};
 
 	void Capture(BYTE* pBits, int w, int h, QString imgName);
 
@@ -35,12 +38,18 @@ public:
 	ImageEncryptor *im_encode;
 
 signals:
- 	void thread_signal(int iChlV);
+	void thread_signal(int iChlV);
 	void thread_signal_stopsave(int iChlV);
+	void thread_signal_saveerror(int iChlV, QString error);
 
 public:
-	void StartSave(QString str_path, QString str_file);
-	void StopSave();
+	bool StartSave(QString str_path, QString str_file);
+	bool StopSave();
+	void ConfigureZarrRule(bool normalize, const ZarrChannelRule& rule,
+						   int ruleId, const QString& xingbie,
+						   const QString& licheng, const QString& chetou,
+						   const QString& machineId);
+	QString LastError() const { return m_lastError; }
 
 	QString m_str_ImgFileName;
 	QString m_str_IdxFileName;
@@ -57,11 +66,11 @@ private:
 	FILE* lpFile_camData;
 	FILE* lpFile_camIdx;
 
-	void OpenCamDataSaveFile(QString str_path_file);
-	void OpenCamIdxSaveFile(QString str_path_file);
+	bool OpenCamDataSaveFile(QString str_path_file);
+	bool OpenCamIdxSaveFile(QString str_path_file);
 	void CloseSaveFile();
-	void ReNameDatFile(void);
-	void ReNameIdxFile(void);
+	bool ReNameDatFile(void);
+	bool ReNameIdxFile(void);
 
 	// 密钥沿用现约定：文件名前两个'-'分段 "{时间}-{相机名}"，与地面端解密一致
 	void CreateEncryptorFromFileName(const QString &strAllFile);
@@ -79,16 +88,38 @@ private:
 	__int64 m_zarrRows, m_zarrCols; // 变换后 zarr 数组的 y/x 尺寸（x 为字节数）
 	QString m_strAllfile_zarrTmp;   // 写入中的目录 xxx.zarr.tmp
 	QString m_strAllfile_zarrFinal; // 收口后重命名为 xxx.zarr
+	QString m_lastError;
+	bool m_writeFailed;
+	bool m_closeSucceeded;
+	bool m_sessionOpen;
+	bool m_normalize;
+	ZarrChannelRule m_zarrRule;
+	int m_zarrRuleId;
+	QString m_zarrXingbie;
+	QString m_zarrLicheng;
+	QString m_zarrChetou;
+	QString m_zarrMachineId;
+	QByteArray m_firstPacketFingerprint;
+	QByteArray m_lastPacketFingerprint;
+	int m_verifiedSamples;
 
-	void OpenZarrSaveStore(QString str_path_file);
-	void CloseZarrStore();
+	bool OpenZarrSaveStore(QString str_path_file);
+	bool CloseZarrWriter();
+	bool VerifyZarrSamples();
+	bool ValidateIndexCount(qint64* recordCount = nullptr);
+	bool FinalizeZarrSession();
+	bool CheckFreeSpace(const QString& path, QString* error) const;
+	bool WriteSessionManifest(const QString& status, const QString& error);
+	QByteArray PacketFingerprint(const BYTE* data) const;
+	void SetFailure(const QString& error);
+	void UpdateZarrGeometry();
 	// 按 SaveTransform 变换并原地 LUT 加密，返回待写入缓冲区指针
 	BYTE* TransformAndEncrypt(BYTE* pSrc);
 
 public:
 
 
-	void StopSaveImg(void);
+	bool StopSaveImg(void);
 	BOOL SaveFrameData(pPICTUREIMAGESTRUCT pPicImg, __int64 isn);
 
 

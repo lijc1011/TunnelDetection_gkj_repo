@@ -1,32 +1,45 @@
 #pragma once
-#include "Globals.h"
+
+// 一次自动亮度计算的结果。控制器只计算建议值，不直接访问相机，便于在
+// QShowThd 中统一完成下发、错误检查和实际值回读。
+struct AutoExposureAdjustment
+{
+	double brightness = 0.0;
+	double exposure = 0.0;
+	double gain = 0.0;
+	bool valid = false;
+	bool changed = false;
+};
 
 // 单台相机的自动亮度控制器（每台一个实例，状态互不干扰）。
-// 策略：曝光优先、增益兜底，两者都在 config 限值内。
-// 亮度测量抽样、死区、单步限速，避免带管线延迟时振荡。
+// 变暗时曝光优先、增益兜底；变亮时先撤掉增益再降低曝光，以减少噪声。
 class AutoExposureController
 {
 private:
-	double target_brightness_;  // 目标平均亮度(0-255)
-	double kp_;                 // 比例系数
-	double ki_;                 // 积分系数
-	double integral_error_;     // 积分累计(带抗饱和)
-	double deadband_;           // 亮度死区：|误差|小于它不动作
-	double max_step_ratio_;     // 单次最大调整比例(如0.15=±15%)
-	long long sample_stride_;   // 测亮度抽样步长(每隔N个像素取1个)
+	double min_brightness_;
+	double max_brightness_;
+	double kp_;
+	double ki_;
+	double integral_error_;
+	double max_step_ratio_;
+	double trim_fraction_;
+	int sample_stride_;
 
-	double clamp(double value, double min_val, double max_val);
+	static double clamp(double value, double min_val, double max_val);
+	double measureBrightness(const unsigned char* image,
+		int image_height, int image_width, int channels) const;
 
 public:
- 	AutoExposureController(double target = 128.0, double kp = 0.3, double ki = 0.02);
-	~AutoExposureController();
+	AutoExposureController(double minBrightness = 75.0, double maxBrightness = 175.0,
+		double kp = 0.35, double ki = 0.02);
 
-	// 清积分：手动↔自动切换、重连时调用，避免残留积分导致跳变
+	void configure(double minBrightness, double maxBrightness,
+		double maxStepRatio, double trimPercent);
 	void reset();
 
-	void adjust(const unsigned char* image,
-		int image_height, int image_width,
-		float& currentExposure, float& currentGain, // 使用引用来修改值
-		float minExposure, float maxExposure,
-		float minGain, float maxGain);
+	AutoExposureAdjustment adjust(const unsigned char* image,
+		int image_height, int image_width, int channels,
+		double currentExposure, double currentGain,
+		double minExposure, double maxExposure,
+		double minGain, double maxGain);
 };

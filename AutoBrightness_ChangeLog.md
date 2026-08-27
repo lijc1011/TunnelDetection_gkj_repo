@@ -1,5 +1,34 @@
 # 会话记录：海康双相机连接修复 + 自动亮度自适应功能
 
+## 2026-08-27 现场测试版更新（本节优先于下方旧说明）
+
+- 海康和 DALSA 均通过 `ICamera` 进入同一软件自动亮度闭环；品牌驱动分别负责临时关闭并恢复相机内部 AE/AG。
+- 严格模式隔离：未勾选自动亮度时不测亮度、不下发参数；从自动切回手动时，恢复进入自动前的曝光、增益及硬件自动状态。
+- 亮度改为 5% 双端截尾均值，降低电缆、绝缘子、黑斑及局部反光的影响。
+- 四张可接受样图的截尾均值约为 78～169，据此设置初始允许范围 75～175。图片名和相机名不参与亮度控制。
+- 每个 `<cameraXX>` 都有独立参数；初始范围相同，以后可根据长期数据分别调整。旧 Config 不含字段仍可正常读取：
+
+```xml
+<AutoBrightnessMin>75</AutoBrightnessMin>
+<AutoBrightnessMax>175</AutoBrightnessMax>
+<AutoBrightnessMaxStepRatio>0.08</AutoBrightnessMaxStepRatio>
+<AutoBrightnessTrimPercent>5</AutoBrightnessTrimPercent>
+<AutoBrightnessInterval>1</AutoBrightnessInterval>
+```
+
+亮度低于本通道 `Min` 才增亮，高于 `Max` 才变暗，位于范围内保持参数不动。`Interval=1` 表示每得到一幅 4096 行拼图计算一次。自动参数只在内存和相机中变化，不覆盖 Config 的手动曝光/增益。
+
+### 今晚海康验证顺序
+
+1. 手动模式启动，记下每台相机曝光和增益，确认画面及存储正常。
+2. 勾选自动亮度，日志应出现“自动亮度已启动”和每路“AE亮度/范围、曝光、增益、下发回读”。
+3. 改变照明或遮挡，确认亮度逐步进入本通道允许范围；暗时先增加曝光，曝光到上限后才增加增益。
+4. 恢复较亮场景，确认先降低增益，再降低曝光。
+5. 取消自动亮度，确认曝光和增益恢复到第1步的值；继续采集一段，验证手动模式无额外参数变化。
+6. 若连续3次下发或回读失败，该路会停止自动调节、恢复手动值并输出错误，其它相机继续工作。
+
+无硬件回归测试：`AutoExposureControllerSelfTest` 已覆盖曝光/增益顺序、范围保持和截尾亮度统计。
+
 > 记录日期：2026-07-02　　分支：main　　构建预设：`local-debug`（VS2022 x64）
 
 本文件汇总本次会话的两项改动，供现场分项调试与后续维护参考。
@@ -46,9 +75,9 @@
 | 控制器(A) | `src/AutoExposureController.cpp` / `.h` | 曝光优先+增益兜底(dB换算)、死区、限速、抽样、`reset()` |
 | 集成(A1/B1-B3) | `src/QShowThd.cpp` / `.h` | 每台独立控制器数组；上升沿用 `GetExpTime/GetCamGain` 播种+清积分；入参(height,width)摆正；每 N 幅降频执行；总开关门控 |
 
-### 可整定参数
-- `src/AutoExposureController.cpp`：`kp_`(0.3)、`ki_`(0.02)、`deadband_`(4)、`max_step_ratio_`(0.15)、`sample_stride_`(8)、构造默认 `target=128`。
-- `src/QShowThd.h`：`m_aeInterval`(3，每 N 幅执行一次 AE)。
+### 当时的可整定参数（已被2026-08-27版本替代）
+- 以下为旧版记录：`kp=0.3`、`ki=0.02`、`deadband=4`、`max_step_ratio=0.15`、统一目标128、间隔3幅。
+- 当前值及 Config 字段以本文顶部“2026-08-27 现场测试版更新”为准。
 
 ### 现场分项调试顺序
 1. **先验隔离**：默认(手动)跑一遍，确认连接/刷新/存储与以前完全一致。
@@ -56,7 +85,7 @@
 3. **整定**：振荡→调小 `kp_`/`max_step_ratio_` 或调大 `m_aeInterval`；太慢→反之。
 
 ### 已知取舍 / 待办(暂缓)
-- `SetCamGain(int)` 目前四舍五入取整；增益范围仅 1~3dB，整数步进够用。需更细再按方案 E1 改 double。
+- 旧版 `SetCamGain(int)` 的整数取整问题已修复，海康和 DALSA 接口现均支持 `double` 增益。
 - AE 触发周期 = 攒满一整幅图 × `m_aeInterval`，实际快慢取决于行频。
 - 参数集中到 config、主界面(而非对话框)显示状态等，为后续可选项。
 

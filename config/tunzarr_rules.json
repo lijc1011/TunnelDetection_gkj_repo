@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "source": "多通道隧道图像转正规则.xlsx (2026-07-17)",
+  "rotation_note": "rotate=270 为顺时针270度（等价逆时针90度）",
+  "machines": {
+    "A": {
+      "slots": [1, 2, 3, 4],
+      "cameras_by_chetou": {"正向": [1, 2, 3, 4], "反向": [8, 7, 6, 5]}
+    },
+    "B": {
+      "slots": [5, 6, 7, 8],
+      "cameras_by_chetou": {"正向": [5, 6, 7, 8], "反向": [4, 3, 2, 1]}
+    }
+  },
+  "rules": [
+    {"id": 1, "xingbie": "下行", "licheng": "增大", "chetou": "正向", "machine": "A", "rotate": 270, "flip": [], "reorder": false},
+    {"id": 2, "xingbie": "下行", "licheng": "增大", "chetou": "反向", "machine": "A", "rotate": 270, "flip": ["环向"], "reorder": false},
+    {"id": 3, "xingbie": "下行", "licheng": "减小", "chetou": "正向", "machine": "A", "rotate": null, "flip": null, "reorder": true, "incomplete": true, "note": "旋转/翻转待现场标定"},
+    {"id": 4, "xingbie": "下行", "licheng": "减小", "chetou": "反向", "machine": "A", "rotate": 270, "flip": ["环向", "纵向"], "reorder": true},
+    {"id": 5, "xingbie": "上行", "licheng": "增大", "chetou": "正向", "machine": "B", "rotate": 270, "flip": [], "reorder": false},
+    {"id": 6, "xingbie": "上行", "licheng": "增大", "chetou": "反向", "machine": "B", "rotate": null, "flip": null, "reorder": false, "incomplete": true, "note": "旋转/翻转待现场标定"},
+    {"id": 7, "xingbie": "上行", "licheng": "减小", "chetou": "正向", "machine": "B", "rotate": 270, "flip": ["纵向"], "reorder": true},
+    {"id": 8, "xingbie": "上行", "licheng": "减小", "chetou": "反向", "machine": "B", "rotate": 270, "flip": ["环向", "纵向"], "reorder": true}
+  ]
+}

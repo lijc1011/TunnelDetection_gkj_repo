@@ -136,6 +136,7 @@ public:
      void startSaveImage(QString sdNumber = "1", QString sdName = "test"); // 开始存储数据
      void makeDestDir(QString strValue);
      void stopSaveImage(); // 开始存储数据
+     bool configureZarrSession(QString *error, QString *summary = nullptr);
 
      //////////串口接收GYK里程////////////////////////////////////////////////////////////////
      QSerialPort *serialPort;
@@ -199,6 +200,7 @@ public:
      void ShowThd_slots(QPixmap picQPixmap, int iChl); // 相机正在刷新显示的槽函数
      void save_thread_slots(int iChlV);                // 相机正在存储槽函数
      void stop_save_thread_slots(int iChlV);           // 相机停止存储槽函数
+     void save_error_slots(int iChlV, QString error);  // Zarr/camidx 写入或收口失败
      void Mil_over_slots(QString ss, QString ee);      // 里程信息对话框设置完毕后的槽函数
      void Mil_time_slots(double dmil, double dspeed);  // 主界面更新脉冲计数的里程和速度信息  槽函数
 

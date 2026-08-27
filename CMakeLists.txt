@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.24)
 
 project(TunnelDetection LANGUAGES CXX)
 
+set(TUNNEL_BUILD_ID "0.2.0-fieldtrial-20260826" CACHE STRING "Build identifier written to Zarr manifests")
+
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -115,7 +117,20 @@ add_executable(${PROJECT_NAME}
     resources.qrc
 )
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE NOMINMAX)
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    NOMINMAX
+    TUNNEL_BUILD_ID="${TUNNEL_BUILD_ID}"
+)
+
+# 无相机硬件也可运行的自动亮度算法回归测试。
+add_executable(AutoExposureControllerSelfTest
+    tools/AutoExposureControllerSelfTest.cpp
+    src/AutoExposureController.cpp
+)
+target_include_directories(AutoExposureControllerSelfTest PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+if(MSVC)
+    target_compile_options(AutoExposureControllerSelfTest PRIVATE /utf-8)
+endif()
 
 if(MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE /utf-8 /FS)
@@ -207,6 +222,25 @@ if(MSVC)
 endif()
 target_link_libraries(TsZarrBench PRIVATE TsZarrBridge)
 
+add_executable(ZarrRulesSelfTest
+    src/tszarr/ZarrRulesSelfTest.cpp
+    src/ZarrSessionRules.cpp
+    src/ZarrSessionRules.h
+)
+if(MSVC)
+    target_compile_options(ZarrRulesSelfTest PRIVATE /utf-8 /FS /EHsc)
+endif()
+target_link_libraries(ZarrRulesSelfTest PRIVATE Qt6::Core)
+
+if(WIN32)
+    add_custom_command(TARGET ZarrRulesSelfTest POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:ZarrRulesSelfTest>/config"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CMAKE_CURRENT_SOURCE_DIR}/config/tunzarr_rules.json"
+                "$<TARGET_FILE_DIR:ZarrRulesSelfTest>/config/tunzarr_rules.json"
+    )
+endif()
+
 if(WIN32)
     if(TARGET opencv_world)
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
@@ -229,4 +263,12 @@ if(WIN32)
             COMMENT "Deploying Qt runtime"
         )
     endif()
+
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${PROJECT_NAME}>/config"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${CMAKE_CURRENT_SOURCE_DIR}/config/tunzarr_rules.json"
+                "$<TARGET_FILE_DIR:${PROJECT_NAME}>/config/tunzarr_rules.json"
+        COMMENT "Copying TunZarr field rule configuration"
+    )
 endif()

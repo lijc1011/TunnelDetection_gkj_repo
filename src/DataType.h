@@ -78,7 +78,11 @@ typedef struct program_set_struct
     int Table_rows;    // 表格行数
     int big_mil_onoff; // 是否打开异常里程屏蔽功能，1开0关
     int mil_threshold; // 最大里程异常值，比如朔黄可设置成250
-    int SaveZarr;      // 存储格式：1=Zarr v3(TensorStore)，0=旧 camdatx(fwrite)
+    int SaveZarr;           // 存储格式：1=Zarr v3(TensorStore)，0=旧 camdatx(fwrite)
+    int ZarrVerifyOnClose;  // Zarr 收口前抽样回读：1开启，0关闭
+    int ZarrMinFreeGB;      // 开始写入及写入过程允许的最小剩余空间（GB）
+    int ZarrNormalize;      // 图像转正开关：1按现场规则转正，0严格按相机原始方向写 Zarr
+    QString ZarrMachineId;  // 转正规则机器编号：A/B；raw 模式可为空
     program_set_struct()
     {
         ZhuCong = 0;
@@ -103,6 +107,10 @@ typedef struct program_set_struct
         big_mil_onoff = 0;
         mil_threshold = 0;
         SaveZarr = 0;
+        ZarrVerifyOnClose = 1;
+        ZarrMinFreeGB = 10;
+        ZarrNormalize = 0;
+        ZarrMachineId = "";
     }
 } program_set_struct, *pprogram_set_struct;
 
@@ -121,7 +129,7 @@ typedef struct CAMERAINFORSTRUCT
     int LineFreq;
     int IsFlip;
     int FlipMode;
-    int SaveTransform;   // Zarr 存储前的几何变换：0无,1水平翻转,2垂直翻转,3旋转180,4顺时针90,5逆时针90
+    int SaveTransform;   // 旧 Zarr 原型遗留值；ZarrNormalize=0 时不应用，避免改变原始方向
     int Gain;
     int isSingle;      // 标识相机是否用于检测单线隧道
     int isDouble;      // 标识相机是否用于检测双线隧道
@@ -132,6 +140,14 @@ typedef struct CAMERAINFORSTRUCT
     int ExposureTimeMax; // 最大曝光时间30us
     int GainMin;         // 最小增益1
     int GainMax;         // 最大增益3
+
+    // 软件自动亮度参数。每个cameraXX独立保存；旧Config缺少字段时使用初始经验范围。
+    // 这些字段只在“自动亮度”模式读取，手动模式完全不使用。
+    double AutoBrightnessMin;
+    double AutoBrightnessMax;
+    double AutoBrightnessMaxStepRatio;
+    double AutoBrightnessTrimPercent;
+    int AutoBrightnessInterval;
 
     // 	char cCamDataName[RouteInfoSize];  //相机数据文件名称
     // 	char cCamIndexName[RouteInfoSize];  //相机索引文件名称
@@ -161,6 +177,12 @@ typedef struct CAMERAINFORSTRUCT
         iSizeFrame = 0;     // 一帧图像大小
         isColorCamera = 0;  // 默认是黑白相机
         isWork = 1;
+
+        AutoBrightnessMin = 75.0;
+        AutoBrightnessMax = 175.0;
+        AutoBrightnessMaxStepRatio = 0.08;
+        AutoBrightnessTrimPercent = 5.0;
+        AutoBrightnessInterval = 1;
 
         IsFlip = 0;
         FlipMode = 0;

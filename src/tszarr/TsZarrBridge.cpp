@@ -135,10 +135,12 @@ void* tszarr_writer_create(const char* array_path_utf8, const TsZarrWriterOption
         auto spec = makeArraySpec(normalizedPath(array_path_utf8), capacity,
                                   options->packet_height, options->packet_width,
                                   options->attributes_json_utf8);
+        tensorstore::OpenMode openMode = tensorstore::OpenMode::create;
+        if (options->overwrite_existing != 0) {
+            openMode = openMode | tensorstore::OpenMode::delete_existing;
+        }
         auto result = tensorstore::Open<std::uint8_t, 3, tensorstore::ReadWriteMode::read_write>(
-                          std::move(spec), tensorstore::Context::Default(),
-                          tensorstore::OpenMode::create | tensorstore::OpenMode::delete_existing)
-                          .result();
+                          std::move(spec), tensorstore::Context::Default(), openMode).result();
         if (!result.ok()) {
             setError(result.status().ToString(), error, error_size);
             return nullptr;

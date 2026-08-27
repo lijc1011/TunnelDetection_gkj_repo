@@ -1,6 +1,9 @@
 #include "TunnelDetection.h"
 #include "HikCamera.h"
 
+#include <QCloseEvent>
+#include <QRegularExpression>
+
 TunnelDetection::TunnelDetection(QWidget* parent)
     : QMainWindow(parent)
     , ui(new Ui::TunnelDetection)
@@ -725,6 +728,10 @@ void TunnelDetection::DefaultIniFile()
     writeToXmlElement(ProInforElement, "big_mil_onoff", QString::number(g_program_setInfor.big_mil_onoff, 10).toStdString().c_str());
     writeToXmlElement(ProInforElement, "mil_threshold", QString::number(g_program_setInfor.mil_threshold, 10).toStdString().c_str());
     writeToXmlElement(ProInforElement, "SaveZarr", QString::number(g_program_setInfor.SaveZarr, 10).toStdString().c_str());
+    writeToXmlElement(ProInforElement, "ZarrVerifyOnClose", QString::number(g_program_setInfor.ZarrVerifyOnClose, 10).toStdString().c_str());
+    writeToXmlElement(ProInforElement, "ZarrMinFreeGB", QString::number(g_program_setInfor.ZarrMinFreeGB, 10).toStdString().c_str());
+    writeToXmlElement(ProInforElement, "ZarrNormalize", QString::number(g_program_setInfor.ZarrNormalize, 10).toStdString().c_str());
+    writeToXmlElement(ProInforElement, "ZarrMachineId", g_program_setInfor.ZarrMachineId.toStdString().c_str());
 
     ////相机信息CameraInfor///////preprocess_data_struct/////////////////////////////
     TiXmlElement *camera_dataElement = new TiXmlElement("camera_data");
@@ -761,6 +768,11 @@ void TunnelDetection::DefaultIniFile()
         writeToXmlElement(Camera_ITEM, "ExposureTimeMax", QString::number(g_cameraInfor[i].ExposureTimeMax, 10).toStdString().c_str());
         writeToXmlElement(Camera_ITEM, "GainMin", QString::number(g_cameraInfor[i].GainMin, 10).toStdString().c_str());
         writeToXmlElement(Camera_ITEM, "GainMax", QString::number(g_cameraInfor[i].GainMax, 10).toStdString().c_str());
+        writeToXmlElement(Camera_ITEM, "AutoBrightnessMin", QString::number(g_cameraInfor[i].AutoBrightnessMin, 'f', 2).toStdString().c_str());
+        writeToXmlElement(Camera_ITEM, "AutoBrightnessMax", QString::number(g_cameraInfor[i].AutoBrightnessMax, 'f', 2).toStdString().c_str());
+        writeToXmlElement(Camera_ITEM, "AutoBrightnessMaxStepRatio", QString::number(g_cameraInfor[i].AutoBrightnessMaxStepRatio, 'f', 3).toStdString().c_str());
+        writeToXmlElement(Camera_ITEM, "AutoBrightnessTrimPercent", QString::number(g_cameraInfor[i].AutoBrightnessTrimPercent, 'f', 2).toStdString().c_str());
+        writeToXmlElement(Camera_ITEM, "AutoBrightnessInterval", QString::number(g_cameraInfor[i].AutoBrightnessInterval, 10).toStdString().c_str());
     }
 
     doc->SaveFile(xmlPath);
@@ -868,6 +880,14 @@ bool TunnelDetection::LoadIniFile()
         g_program_setInfor.mil_threshold = QString(genElement->FirstChildElement("mil_threshold")->FirstChild()->Value()).toInt();
     if ((genElement->FirstChildElement("SaveZarr") != NULL) && (genElement->FirstChildElement("SaveZarr")->FirstChild() != NULL))
         g_program_setInfor.SaveZarr = QString(genElement->FirstChildElement("SaveZarr")->FirstChild()->Value()).toInt();
+    if ((genElement->FirstChildElement("ZarrVerifyOnClose") != NULL) && (genElement->FirstChildElement("ZarrVerifyOnClose")->FirstChild() != NULL))
+        g_program_setInfor.ZarrVerifyOnClose = QString(genElement->FirstChildElement("ZarrVerifyOnClose")->FirstChild()->Value()).toInt();
+    if ((genElement->FirstChildElement("ZarrMinFreeGB") != NULL) && (genElement->FirstChildElement("ZarrMinFreeGB")->FirstChild() != NULL))
+        g_program_setInfor.ZarrMinFreeGB = QString(genElement->FirstChildElement("ZarrMinFreeGB")->FirstChild()->Value()).toInt();
+    if ((genElement->FirstChildElement("ZarrNormalize") != NULL) && (genElement->FirstChildElement("ZarrNormalize")->FirstChild() != NULL))
+        g_program_setInfor.ZarrNormalize = QString(genElement->FirstChildElement("ZarrNormalize")->FirstChild()->Value()).toInt();
+    if ((genElement->FirstChildElement("ZarrMachineId") != NULL) && (genElement->FirstChildElement("ZarrMachineId")->FirstChild() != NULL))
+        g_program_setInfor.ZarrMachineId = QString(genElement->FirstChildElement("ZarrMachineId")->FirstChild()->Value()).trimmed().toUpper();
 
     ////相机信息CAMERAINFORSTRUCT//////////////////////////////////////////////////////////////
     TiXmlElement *preprocess_mark_dataElement = rootElement->FirstChildElement("camera_data");
@@ -927,6 +947,16 @@ bool TunnelDetection::LoadIniFile()
                 g_cameraInfor[i].GainMin = QString(preprocess_ITEM->FirstChildElement("GainMin")->FirstChild()->Value()).toInt();
             if ((preprocess_ITEM->FirstChildElement("GainMax") != NULL) && (preprocess_ITEM->FirstChildElement("GainMax")->FirstChild() != NULL))
                 g_cameraInfor[i].GainMax = QString(preprocess_ITEM->FirstChildElement("GainMax")->FirstChild()->Value()).toInt();
+            if ((preprocess_ITEM->FirstChildElement("AutoBrightnessMin") != NULL) && (preprocess_ITEM->FirstChildElement("AutoBrightnessMin")->FirstChild() != NULL))
+                g_cameraInfor[i].AutoBrightnessMin = QString(preprocess_ITEM->FirstChildElement("AutoBrightnessMin")->FirstChild()->Value()).toDouble();
+            if ((preprocess_ITEM->FirstChildElement("AutoBrightnessMax") != NULL) && (preprocess_ITEM->FirstChildElement("AutoBrightnessMax")->FirstChild() != NULL))
+                g_cameraInfor[i].AutoBrightnessMax = QString(preprocess_ITEM->FirstChildElement("AutoBrightnessMax")->FirstChild()->Value()).toDouble();
+            if ((preprocess_ITEM->FirstChildElement("AutoBrightnessMaxStepRatio") != NULL) && (preprocess_ITEM->FirstChildElement("AutoBrightnessMaxStepRatio")->FirstChild() != NULL))
+                g_cameraInfor[i].AutoBrightnessMaxStepRatio = QString(preprocess_ITEM->FirstChildElement("AutoBrightnessMaxStepRatio")->FirstChild()->Value()).toDouble();
+            if ((preprocess_ITEM->FirstChildElement("AutoBrightnessTrimPercent") != NULL) && (preprocess_ITEM->FirstChildElement("AutoBrightnessTrimPercent")->FirstChild() != NULL))
+                g_cameraInfor[i].AutoBrightnessTrimPercent = QString(preprocess_ITEM->FirstChildElement("AutoBrightnessTrimPercent")->FirstChild()->Value()).toDouble();
+            if ((preprocess_ITEM->FirstChildElement("AutoBrightnessInterval") != NULL) && (preprocess_ITEM->FirstChildElement("AutoBrightnessInterval")->FirstChild() != NULL))
+                g_cameraInfor[i].AutoBrightnessInterval = QString(preprocess_ITEM->FirstChildElement("AutoBrightnessInterval")->FirstChild()->Value()).toInt();
         }
     }
     return true;
@@ -1932,6 +1962,7 @@ void TunnelDetection::sub_runThdFun()
                 m_pSaveImg[i] = new QSaveThd(this, m_pCamera[i], g_cameraInfor[i], i);
                 QObject::connect(m_pSaveImg[i], SIGNAL(thread_signal(int)), this, SLOT(save_thread_slots(int)));
                 QObject::connect(m_pSaveImg[i], SIGNAL(thread_signal_stopsave(int)), this, SLOT(stop_save_thread_slots(int)));
+                QObject::connect(m_pSaveImg[i], SIGNAL(thread_signal_saveerror(int,QString)), this, SLOT(save_error_slots(int,QString)));
                 m_pSaveImg[i]->startThd();
             }
 #endif
@@ -2861,6 +2892,17 @@ void TunnelDetection::disConnect()
 //////图像数据存储////////////////////////////////////////////////////////////////////
 void TunnelDetection::startAcqActionSlot()
 {
+    QString zarrError;
+    QString zarrSummary;
+    if (!configureZarrSession(&zarrError, &zarrSummary))
+    {
+        QMessageBox::critical(this, QStringLiteral("Zarr 采集预检失败"), zarrError);
+        return;
+    }
+    if (g_program_setInfor.SaveZarr != 0)
+    {
+        statusbar->showMessage(zarrSummary, 15000);
+    }
     if (m_idx == -1)
     {
         QString sdNumber = "01";
@@ -2894,7 +2936,8 @@ void TunnelDetection::startAcqActionSlot()
         str_path += "acq";
         makeDestDir(str_path);
 
-        // 每个相机开始存储
+        // 第一阶段：所有通道先创建写入目标；任一失败则全部回滚，不启动相机。
+        bool allReady = true;
         for (int i = 0; i < g_program_setInfor.CameraNumber; i++)
         {
             // 文件名:年月日时分秒_相机名称_运行行别_里程增减_车头朝向.camdat
@@ -2911,14 +2954,24 @@ void TunnelDetection::startAcqActionSlot()
 
             if (m_pSaveImg[i] != NULL)
             {
-                m_pSaveImg[i]->StartSave(str_path, str_FileName);
-            }
-            if (m_pCamera[i] != NULL && g_isSave[i].load())
-            {
-                m_pCamera[i]->StartAcquisition();
+                allReady = m_pSaveImg[i]->StartSave(str_path, str_FileName) && allReady;
             }
 
             qDebug() << str_FileName;
+        }
+        if (!allReady)
+        {
+            for (int i = 0; i < g_program_setInfor.CameraNumber; ++i)
+            {
+                if (m_pSaveImg[i] != NULL && g_isSave[i].load()) m_pSaveImg[i]->StopSave();
+            }
+            QMessageBox::critical(this, QStringLiteral("开始采集失败"),
+                                  QStringLiteral("至少一个通道未能创建存储目标，所有通道均未启动。请查看状态栏和 .tmp 诊断。"));
+            return;
+        }
+        for (int i = 0; i < g_program_setInfor.CameraNumber; ++i)
+        {
+            if (m_pCamera[i] != NULL && g_isSave[i].load()) m_pCamera[i]->StartAcquisition();
         }
     }
     else
@@ -2932,6 +2985,13 @@ void TunnelDetection::startAcqActionSlot()
 }
 void TunnelDetection::startSaveImage(QString sdNumber, QString sdName)
 {
+    QString zarrError;
+    if (!configureZarrSession(&zarrError))
+    {
+        qCritical() << "Zarr acquisition preflight failed:" << zarrError;
+        statusbar->showMessage(QStringLiteral("Zarr 预检失败：%1").arg(zarrError));
+        return;
+    }
     // 建立文件夹
     // 第1级固定根目录
     QString str_path = g_program_setInfor.DataDestPath;
@@ -2961,7 +3021,8 @@ void TunnelDetection::startSaveImage(QString sdNumber, QString sdName)
     str_path += "acq";
     makeDestDir(str_path);
 
-    // 每个相机开始存储
+    // 第一阶段只准备全部通道的存储目标，避免部分相机已经采集、部分相机启动失败。
+    bool allReady = true;
     for (int i = 0; i < g_program_setInfor.CameraNumber; i++)
     {
         if (g_cameraInfor[i].isWork == 1)
@@ -2980,16 +3041,100 @@ void TunnelDetection::startSaveImage(QString sdNumber, QString sdName)
 
             if (m_pSaveImg[i] != NULL)
             {
-                m_pSaveImg[i]->StartSave(str_path, str_FileName);
-            }
-            if (m_pCamera[i] != NULL && g_isSave[i].load())
-            {
-                m_pCamera[i]->StartAcquisition();
+                allReady = m_pSaveImg[i]->StartSave(str_path, str_FileName) && allReady;
             }
 
             qDebug() << str_FileName;
         }
     }
+    if (!allReady)
+    {
+        for (int i = 0; i < g_program_setInfor.CameraNumber; ++i)
+        {
+            if (m_pSaveImg[i] != NULL && g_isSave[i].load()) m_pSaveImg[i]->StopSave();
+        }
+        statusbar->showMessage(QStringLiteral("自动采集启动失败：至少一个通道无法创建存储目标"));
+        return;
+    }
+    for (int i = 0; i < g_program_setInfor.CameraNumber; ++i)
+    {
+        if (g_cameraInfor[i].isWork == 1 && m_pCamera[i] != NULL && g_isSave[i].load())
+            m_pCamera[i]->StartAcquisition();
+    }
+}
+
+bool TunnelDetection::configureZarrSession(QString *error, QString *summary)
+{
+    if (error) error->clear();
+    if (summary) summary->clear();
+    const bool zarrEnabled = g_program_setInfor.SaveZarr != 0;
+    const bool normalize = zarrEnabled && g_program_setInfor.ZarrNormalize != 0;
+    ZarrSessionRulePlan plan;
+
+    if (normalize)
+    {
+        const QString ruleMileage = (m_strMilDir == QStringLiteral("增加"))
+                                        ? QStringLiteral("增大") : m_strMilDir;
+        const QString ruleHead = ZarrSessionRules::deriveChetouDirection(m_strMilDir, m_strChetou);
+        if (ruleHead.isEmpty())
+        {
+            if (error) *error = QStringLiteral("无法由里程方向“%1”和车头朝向“%2”推导正向/反向")
+                                    .arg(m_strMilDir, m_strChetou);
+            return false;
+        }
+        plan = ZarrSessionRules::compute(QString(), m_strXB, ruleMileage, ruleHead,
+                                         g_program_setInfor.ZarrMachineId.trimmed().toUpper());
+        if (!plan.ok)
+        {
+            if (error) *error = plan.error;
+            return false;
+        }
+        if (plan.incomplete)
+        {
+            if (error) *error = QStringLiteral("规则 %1 尚未标定，只允许 raw Zarr 采集").arg(plan.ruleId);
+            return false;
+        }
+        if (!plan.channels.isEmpty() && plan.channels.first().reorder)
+        {
+            if (error) *error = QStringLiteral("规则 %1 需要跨包倒序；流式采集无法在未知总长度时安全完成，请设置 ZarrNormalize=0 采集 raw Zarr")
+                                    .arg(plan.ruleId);
+            return false;
+        }
+    }
+
+    for (int i = 0; i < g_program_setInfor.CameraNumber; ++i)
+    {
+        if (m_pSaveImg[i] == NULL) continue;
+        ZarrChannelRule channel;
+        int cameraId = i + 1;
+        const QRegularExpressionMatch cameraMatch =
+            QRegularExpression(QStringLiteral("(\\d+)Cam"), QRegularExpression::CaseInsensitiveOption)
+                .match(g_cameraInfor[i].Name);
+        if (cameraMatch.hasMatch()) cameraId = cameraMatch.captured(1).toInt();
+        if (normalize && !ZarrSessionRules::channelForCamera(plan, cameraId, &channel))
+        {
+            if (error) *error = QStringLiteral("规则 %1 不包含当前相机 %2（编号 %3）")
+                                    .arg(plan.ruleId).arg(g_cameraInfor[i].Name).arg(cameraId);
+            return false;
+        }
+        m_pSaveImg[i]->ConfigureZarrRule(normalize, channel, plan.ruleId,
+                                         m_strXB,
+                                         (m_strMilDir == QStringLiteral("增加")) ? QStringLiteral("增大") : m_strMilDir,
+                                         ZarrSessionRules::deriveChetouDirection(m_strMilDir, m_strChetou),
+                                         g_program_setInfor.ZarrMachineId.trimmed().toUpper());
+    }
+
+    if (summary && zarrEnabled)
+    {
+        *summary = normalize
+                       ? QStringLiteral("Zarr v3 在线转正：规则 %1，机器 %2，收口抽样回读=%3")
+                             .arg(plan.ruleId).arg(g_program_setInfor.ZarrMachineId)
+                             .arg(g_program_setInfor.ZarrVerifyOnClose != 0 ? QStringLiteral("开") : QStringLiteral("关"))
+                       : QStringLiteral("Zarr v3 raw 采集：最小剩余空间 %1 GB，收口抽样回读=%2")
+                             .arg(g_program_setInfor.ZarrMinFreeGB)
+                             .arg(g_program_setInfor.ZarrVerifyOnClose != 0 ? QStringLiteral("开") : QStringLiteral("关"));
+    }
+    return true;
 }
 void TunnelDetection::makeDestDir(QString strValue)
 {
@@ -3011,17 +3156,15 @@ void TunnelDetection::makeDestDir(QString strValue)
 }
 void TunnelDetection::stopAcqActionSlot()
 {
+    // 第一阶段先停全部相机，避免等待前一通道 Zarr 收口时后续通道继续采集。
     for (int i = 0; i < g_program_setInfor.CameraNumber; i++)
     {
-        if (m_pCamera[i] != NULL)
-        {
-            m_pCamera[i]->StopAcquisition();
-        }
-
-        if (m_pSaveImg[i] != NULL)
-        {
-            m_pSaveImg[i]->StopSave();
-        }
+        if (m_pCamera[i] != NULL) m_pCamera[i]->StopAcquisition();
+    }
+    // 第二阶段逐通道等待异步写、索引校验和抽样回读完成。
+    for (int i = 0; i < g_program_setInfor.CameraNumber; i++)
+    {
+        if (m_pSaveImg[i] != NULL) m_pSaveImg[i]->StopSave();
     }
 
     // 写一行csv
@@ -3033,15 +3176,14 @@ void TunnelDetection::stopSaveImage()
     {
         if (g_cameraInfor[i].isWork == 1)
         {
-            if (m_pCamera[i] != NULL)
-            {
-                m_pCamera[i]->StopAcquisition();
-            }
-
-            if (m_pSaveImg[i] != NULL)
-            {
-                m_pSaveImg[i]->StopSave();
-            }
+            if (m_pCamera[i] != NULL) m_pCamera[i]->StopAcquisition();
+        }
+    }
+    for (int i = 0; i < g_program_setInfor.CameraNumber; i++)
+    {
+        if (g_cameraInfor[i].isWork == 1)
+        {
+            if (m_pSaveImg[i] != NULL) m_pSaveImg[i]->StopSave();
         }
     }
 }
@@ -3056,7 +3198,34 @@ void TunnelDetection::stop_save_thread_slots(int iChlV)
 {
     label_isSave[iChlV]->setText(QStringLiteral("停止存储"));
 }
+void TunnelDetection::save_error_slots(int iChlV, QString error)
+{
+    if (iChlV >= 0 && iChlV < MAXCAMNUM && label_isSave[iChlV] != NULL)
+        label_isSave[iChlV]->setText(QStringLiteral("存储失败"));
+    statusbar->showMessage(QStringLiteral("通道 %1 存储失败：%2").arg(iChlV + 1).arg(error));
+    qCritical() << "Storage failure channel" << (iChlV + 1) << error;
+}
 void TunnelDetection::closeEvent(QCloseEvent *event)
 {
+    bool saving = false;
+    for (int i = 0; i < g_program_setInfor.CameraNumber; ++i)
+        saving = saving || g_isSave[i].load();
+    if (saving)
+    {
+        const QMessageBox::StandardButton answer = QMessageBox::warning(
+            this, QStringLiteral("正在收口采集数据"),
+            QStringLiteral("程序将先停止相机并等待 Zarr/camidx 完成收口。确认退出吗？"),
+            QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Cancel);
+        if (answer != QMessageBox::Yes)
+        {
+            event->ignore();
+            return;
+        }
+        for (int i = 0; i < g_program_setInfor.CameraNumber; ++i)
+            if (m_pCamera[i] != NULL) m_pCamera[i]->StopAcquisition();
+        for (int i = 0; i < g_program_setInfor.CameraNumber; ++i)
+            if (m_pSaveImg[i] != NULL) m_pSaveImg[i]->StopSave();
+    }
     m_milDirect->StopCount();
+    event->accept();
 }

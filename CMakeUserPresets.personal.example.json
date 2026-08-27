@@ -29,7 +29,7 @@
             "displayName": "Debug 全量构建（含 TensorStore，首次/TensorStore 变动时用）",
             "configurePreset": "local",
             "configuration": "Debug",
-            "targets": ["TunnelDetection", "TsZarrBench"],
+            "targets": ["TunnelDetection", "TsZarrBench", "ZarrRulesSelfTest"],
             "nativeToolOptions": ["/m"]
         },
         {
@@ -45,7 +45,7 @@
             "displayName": "Release 全量构建（含 TensorStore）",
             "configurePreset": "local",
             "configuration": "Release",
-            "targets": ["TunnelDetection", "TsZarrBench"],
+            "targets": ["TunnelDetection", "TsZarrBench", "ZarrRulesSelfTest"],
             "nativeToolOptions": ["/m"]
         },
         {

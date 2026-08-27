@@ -3,5 +3,8 @@
     "cmake.configurePreset": "local",
     "cmake.buildPreset": "local-debug-fast",
     "cmake.buildBeforeRun": true,
-    "cmake.defaultBuildTarget": "TunnelDetection"
+    "cmake.defaultBuildTarget": "TunnelDetection",
+    "cmake.debugConfig": {
+        "cwd": "${workspaceFolder}/bin/Debug"
+    }
 }

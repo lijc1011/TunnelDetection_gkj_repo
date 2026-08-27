@@ -97,10 +97,10 @@ void CHikCamera::ApplyCameraParams()
     // 触发模式：1=外触发(编码器)，0=内触发
     if (m_camInfor.TriggerMode == 1)
     {
-        MV_CC_SetEnumValue(m_handle, "TriggerMode", 1); // On
+    //    MV_CC_SetEnumValue(m_handle, "TriggerMode", 1); // On
         // 行触发，触发源走编码器；不同型号节点名可能不同，best-effort
-        MV_CC_SetEnumValueByString(m_handle, "TriggerSelector", "LineStart");
-        MV_CC_SetEnumValueByString(m_handle, "TriggerSource", "EncoderModuleOut");
+        //MV_CC_SetEnumValueByString(m_handle, "TriggerSelector", "LineStart");
+       // MV_CC_SetEnumValueByString(m_handle, "TriggerSource", "EncoderModuleOut");
     }
     else
     {
@@ -374,6 +374,7 @@ void CHikCamera::ClearSaveDeg(int iSize)
 
 BOOL CHikCamera::SetExpTime(double itime)
 {
+    std::lock_guard<std::mutex> lock(m_parameterMutex);
     if (m_handle == NULL)
         return FALSE;
     return MV_CC_SetFloatValue(m_handle, "ExposureTime", (float)itime) == MV_OK;
@@ -381,6 +382,7 @@ BOOL CHikCamera::SetExpTime(double itime)
 
 BOOL CHikCamera::GetExpTime(double &itime)
 {
+    std::lock_guard<std::mutex> lock(m_parameterMutex);
     if (m_handle == NULL)
         return FALSE;
     MVCC_FLOATVALUE st;
@@ -393,8 +395,9 @@ BOOL CHikCamera::GetExpTime(double &itime)
     return FALSE;
 }
 
-BOOL CHikCamera::SetCamGain(int iGain)
+BOOL CHikCamera::SetCamGain(double iGain)
 {
+    std::lock_guard<std::mutex> lock(m_parameterMutex);
     if (m_handle == NULL)
         return FALSE;
     return MV_CC_SetFloatValue(m_handle, "Gain", (float)iGain) == MV_OK;
@@ -402,6 +405,7 @@ BOOL CHikCamera::SetCamGain(int iGain)
 
 BOOL CHikCamera::GetCamGain(double &iGain)
 {
+    std::lock_guard<std::mutex> lock(m_parameterMutex);
     if (m_handle == NULL)
         return FALSE;
     MVCC_FLOATVALUE st;
@@ -412,6 +416,51 @@ BOOL CHikCamera::GetCamGain(double &iGain)
         return TRUE;
     }
     return FALSE;
+}
+
+BOOL CHikCamera::BeginSoftwareAutoBrightness()
+{
+    std::lock_guard<std::mutex> lock(m_parameterMutex);
+    if (m_handle == NULL) return FALSE;
+    if (m_autoBrightnessOverrideActive) return TRUE;
+
+    MVCC_ENUMVALUE value;
+    memset(&value, 0, sizeof(value));
+    m_savedExposureAutoValid = MV_CC_GetEnumValue(m_handle, "ExposureAuto", &value) == MV_OK;
+    if (m_savedExposureAutoValid) m_savedExposureAuto = value.nCurValue;
+    memset(&value, 0, sizeof(value));
+    m_savedGainAutoValid = MV_CC_GetEnumValue(m_handle, "GainAuto", &value) == MV_OK;
+    if (m_savedGainAutoValid) m_savedGainAuto = value.nCurValue;
+
+    // 海康GenICam枚举中 Off=0。某些线阵型号没有GainAuto节点；曝光/增益本身
+    // 仍可手动写入时，不因缺少自动节点而阻断软件闭环。
+    const bool exposureDisabled = !m_savedExposureAutoValid || m_savedExposureAuto == 0 ||
+        MV_CC_SetEnumValue(m_handle, "ExposureAuto", 0) == MV_OK;
+    const bool gainDisabled = !m_savedGainAutoValid || m_savedGainAuto == 0 ||
+        MV_CC_SetEnumValue(m_handle, "GainAuto", 0) == MV_OK;
+    if (!exposureDisabled || !gainDisabled)
+    {
+        if (m_savedExposureAutoValid)
+            MV_CC_SetEnumValue(m_handle, "ExposureAuto", m_savedExposureAuto);
+        if (m_savedGainAutoValid)
+            MV_CC_SetEnumValue(m_handle, "GainAuto", m_savedGainAuto);
+        return FALSE;
+    }
+    m_autoBrightnessOverrideActive = true;
+    return TRUE;
+}
+
+void CHikCamera::EndSoftwareAutoBrightness()
+{
+    std::lock_guard<std::mutex> lock(m_parameterMutex);
+    if (m_handle == NULL || !m_autoBrightnessOverrideActive) return;
+    if (m_savedExposureAutoValid)
+        MV_CC_SetEnumValue(m_handle, "ExposureAuto", m_savedExposureAuto);
+    if (m_savedGainAutoValid)
+        MV_CC_SetEnumValue(m_handle, "GainAuto", m_savedGainAuto);
+    m_autoBrightnessOverrideActive = false;
+    m_savedExposureAutoValid = false;
+    m_savedGainAutoValid = false;
 }
 
 BOOL CHikCamera::GetCamFreg(double &iFreg)

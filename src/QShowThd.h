@@ -34,11 +34,24 @@ public:
 	void Capture(BYTE* pBits, int w, int h, QString imgName);
 
 	AutoExposureController m_aec[MAXCAMNUM]; // 每台相机一个控制器(状态独立)
-	float m_currentExposure[MAXCAMNUM];
-	float m_currentGain[MAXCAMNUM];
-	int m_aeCounter = 0;             // AE 降频计数
-	int m_aeInterval = 3;            // 每 N 幅拼好图执行一次 AE
+	double m_currentExposure[MAXCAMNUM];
+	double m_currentGain[MAXCAMNUM];
+	double m_manualExposureBeforeAuto[MAXCAMNUM];
+	double m_manualGainBeforeAuto[MAXCAMNUM];
+	double m_autoMin[MAXCAMNUM];
+	double m_autoMax[MAXCAMNUM];
+	int m_aeCounter[MAXCAMNUM];
+	int m_aeInterval[MAXCAMNUM];
+	int m_aeFailureCount[MAXCAMNUM];
+	int m_aeHoldLogCounter[MAXCAMNUM];
+	bool m_autoReady[MAXCAMNUM];
+	bool m_autoOverrideActive[MAXCAMNUM];
+	bool m_manualStateSaved[MAXCAMNUM];
 	bool m_prevAutoEnabled = false;  // 上一周期总开关状态(用于上升沿播种)
+
+	void enterAutoBrightnessMode();
+	void leaveAutoBrightnessMode();
+	void updateAutoBrightness();
 signals:
 	void threadover_Camdat_std(QPixmap picQPixmap,int iChlV);
 

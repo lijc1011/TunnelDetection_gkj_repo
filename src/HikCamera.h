@@ -35,10 +35,12 @@ public:
 
     BOOL SetExpTime(double itime) override;
     BOOL GetExpTime(double &itime) override;
-    BOOL SetCamGain(int iGain) override;
+    BOOL SetCamGain(double iGain) override;
     BOOL GetCamGain(double &iGain) override;
     BOOL GetCamFreg(double &iFreg) override;
     BOOL SetCamFreg(double iFreg) override;
+    BOOL BeginSoftwareAutoBrightness() override;
+    void EndSoftwareAutoBrightness() override;
 
     _int64 get_ImgDeqShow_Size() override;
     _int64 get_ImgDeqSave_Size() override;
@@ -65,9 +67,16 @@ private:
 
     std::mutex m_showMutex;
     std::mutex m_saveMutex;
+    std::mutex m_parameterMutex;
     deque<FRAMEIMAGESTRUCT> m_ImgDeqShow;
     deque<FRAMEIMAGESTRUCT> m_ImgDeqSave;
 
     CAMERAINFORSTRUCT m_camInfor;
     QMilThd *cam_milDetect;
+
+    bool m_autoBrightnessOverrideActive = false;
+    bool m_savedExposureAutoValid = false;
+    bool m_savedGainAutoValid = false;
+    unsigned int m_savedExposureAuto = 0;
+    unsigned int m_savedGainAuto = 0;
 };
