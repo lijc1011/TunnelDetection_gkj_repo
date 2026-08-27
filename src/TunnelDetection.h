@@ -217,5 +217,6 @@ public:
 
  private:
      Ui::TunnelDetection *ui;
+     bool eventFilter(QObject *watched, QEvent *event) override;
      void closeEvent(QCloseEvent *event);
 };

@@ -1,7 +1,9 @@
 #include "TunnelDetection.h"
 #include "HikCamera.h"
 
+#include <QApplication>
 #include <QCloseEvent>
+#include <QKeyEvent>
 #include <QRegularExpression>
 
 TunnelDetection::TunnelDetection(QWidget* parent)
@@ -531,6 +533,7 @@ TunnelDetection::TunnelDetection(QWidget* parent)
     timerprogress_auto = new QTimer(this);
     connect(timerprogress_auto, SIGNAL(timeout()), this, SLOT(timerUpDateAutoModeprogress()));
     timerprogress_auto->setInterval(100);
+    QApplication::instance()->installEventFilter(this);
 
     // 定时器，用于优化GYK里程，每10ms一次
     timerprogress_gykMil_accuracy = new QTimer(this);
@@ -3197,6 +3200,29 @@ void TunnelDetection::save_thread_slots(int iChlV)
 void TunnelDetection::stop_save_thread_slots(int iChlV)
 {
     label_isSave[iChlV]->setText(QStringLiteral("停止存储"));
+}
+bool TunnelDetection::eventFilter(QObject *watched, QEvent *event)
+{
+    if (event->type() == QEvent::KeyPress && isActiveWindow() &&
+        g_program_setInfor.ObjectType == QStringLiteral("隧道") &&
+        timerprogress_auto != NULL && !timerprogress_auto->isActive())
+    {
+        QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+        if (keyEvent->modifiers() == Qt::NoModifier && !keyEvent->isAutoRepeat())
+        {
+            if (keyEvent->key() == Qt::Key_Q)
+            {
+                startAcqAction->trigger();
+                return true;
+            }
+            if (keyEvent->key() == Qt::Key_W)
+            {
+                stopAcqAction->trigger();
+                return true;
+            }
+        }
+    }
+    return QMainWindow::eventFilter(watched, event);
 }
 void TunnelDetection::save_error_slots(int iChlV, QString error)
 {

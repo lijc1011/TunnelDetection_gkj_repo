@@ -400,6 +400,20 @@ BOOL CHikCamera::SetCamGain(double iGain)
     std::lock_guard<std::mutex> lock(m_parameterMutex);
     if (m_handle == NULL)
         return FALSE;
+
+    // 海康相机开启机内自动增益时，Gain 节点可能不可写，或者写入后立即
+    // 被 GainAuto 覆盖。手动亮度和软件自动亮度都由程序直接下发 Gain，
+    // 因此写入前确保机内自动增益处于关闭状态。部分线阵型号没有
+    // GainAuto 节点，此时忽略该节点的返回值，继续尝试写 Gain。
+    MVCC_ENUMVALUE gainAuto;
+    memset(&gainAuto, 0, sizeof(gainAuto));
+    if (MV_CC_GetEnumValue(m_handle, "GainAuto", &gainAuto) == MV_OK &&
+        gainAuto.nCurValue != 0 &&
+        MV_CC_SetEnumValue(m_handle, "GainAuto", 0) != MV_OK)
+    {
+        return FALSE;
+    }
+
     return MV_CC_SetFloatValue(m_handle, "Gain", (float)iGain) == MV_OK;
 }
 
