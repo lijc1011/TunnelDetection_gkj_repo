@@ -1,7 +1,8 @@
 {
     "cmake.useCMakePresets": "always",
-    "cmake.configurePreset": "local",
-    "cmake.buildPreset": "local-debug-fast",
+    "cmake.configureOnOpen": false,
+    "cmake.configureOnEdit": false,
+    "cmake.skipConfigureIfCachePresent": true,
     "cmake.buildBeforeRun": true,
     "cmake.defaultBuildTarget": "TunnelDetection",
     "cmake.debugConfig": {

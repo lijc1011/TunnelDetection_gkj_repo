@@ -19,6 +19,7 @@ Copy-Item CMakeUserPresets.personal.example.json CMakeUserPresets.json
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\cmake.ps1 --preset local
 powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\cmake.ps1 --build --preset local-debug
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\cmake.ps1 --preset local-app
 ```
 
 也可以直接在 VS Code 中运行默认生成任务，或按 `F5` 构建并调试。
@@ -67,15 +68,52 @@ TensorStore 源码 vendor 在 `3rdparty/TensorStore`，经 FetchContent 并入�
 
 ### 日常构建（增量，快）
 
-- VS Code 小齿轮/小甲虫/小三角默认走 `local-debug-fast` 预设：
-  `msbuild /p:BuildProjectReferences=false`，只编译主程序，不扫描 TensorStore 的几百个工程。
-- 命令行：`.\tools\cmake.ps1 --build --preset local-debug-fast`
+- VS Code 默认构建任务和 F5 使用 `local-app-debug`。
+- CMake Tools 工具栏的预设选择保存在 VS Code 工作区状态中，需要首次手动选择：
+  `CMake: Select Configure Preset` → `local-app`，
+  `CMake: Select Build Preset` → `local-app-debug`。
+  `settings.json` 中的 `cmake.configurePreset` / `cmake.buildPreset` 不是该扩展支持的设置项。
+- 日常构建树位于 `build/local-app`，直接链接 `bin/Debug` 或 `bin/Release` 中
+  已构建的 `TsZarrBridge.dll/.lib`，不加载 TensorStore 源码、不运行其转换脚本。
+- 主程序输出仍在 `bin/Debug`、`bin/Release`，F5 的启动路径不变。
+- Debug：`.\tools\cmake.ps1 --build --preset local-app-debug`
+- Release：`.\tools\cmake.ps1 --build --preset local-app-release`
+- 两个配置分别引用对应的桥接库，不混用 Debug/Release。
+- 其他配置仍可通过完整构建入口生成；日常入口也必须先具备对应配置的 DLL/LIB。
+- 原 `local-debug-fast` / `local-release-fast` 预设保留，供旧流程使用。
+
+### 避免重复配置（Configure / Generate）
+
+- VS Code 不再在打开项目或保存 `CMakeLists.txt` 时自动配置；已有缓存时跳过自动配置。
+- 仅修改已有 `.cpp/.h` 内容时，直接使用日常增量构建。
+- 添加或删除源码、修改 CMake 文件、预设或依赖路径后，先运行任务
+  `CMake Configure Local`，或执行 `.\tools\cmake.ps1 --preset local-app`，再构建。
+- 保留 `build/local-app`，以及完整构建树 `build/local` 及其 `_deps`；
+  只在排查缓存问题时删除缓存并重新配置。
+- FULL 构建任务保留配置前置步骤，继续用于首次构建或依赖变动后的完整构建。
 
 ### 何时需要全量构建（任务：Build Debug/Release FULL (TensorStore)）
 
 - 首次克隆/首次构建；
-- 改了 `3rdparty/TensorStore` 或 `src/tszarr/`（桥接层）；
-- 改了根 `CMakeLists.txt`（增量预设跳过 ZERO_CHECK，不会自动重新 configure）。
+- 改了 `3rdparty/TensorStore` 或 `TsZarrBridge.cpp/.h`（桥接层）；
+- 调整了桥接库的编译选项、依赖、工具链或架构。
+
+完整构建仍使用原来的 `local` 配置预设和 `build/local` 构建树，
+会更新 `bin/<Config>/TsZarrBridge.dll/.lib`，供日常构建直接使用。
+VS Code 任务 `Build Debug/Release FULL (TensorStore)` 会先执行
+`CMake Configure FULL (TensorStore)`，不会使用日常入口跳过存储模块。
+
+命令行示例（Debug；Release 改用 `local-release`）：
+
+```powershell
+.\tools\cmake.ps1 --preset local
+.\tools\cmake.ps1 --build --preset local-debug
+.\tools\cmake.ps1 --preset local-app
+```
+
+桥接库属于本机构建产物，不提交到 Git。新电脑先完成对应配置的完整构建，
+再使用日常入口；也可用 `TUNNEL_TSBRIDGE_PREBUILT_DIR` 指向匹配的预编译库根目录。
+更新桥接库后可运行 `bin/<Config>/TsZarrBench.exe --self-test` 校验写入和读回。
 
 ### 存储格式说明
 

@@ -161,6 +161,19 @@ if(TUNNEL_USE_Z5)
 endif()
 
 # ===== TensorStore (Zarr v3) 采集写盘后端 =====
+option(TUNNEL_USE_PREBUILT_TSBRIDGE
+    "Use an existing TsZarrBridge DLL instead of configuring TensorStore" OFF)
+set(TUNNEL_TSBRIDGE_PREBUILT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/bin"
+    CACHE PATH "Root containing <Config>/TsZarrBridge.dll and TsZarrBridge.lib")
+
+# 主工程的 Qt 自动生成只属于主 target；存储后端不需要 moc/uic/rcc。
+set(CMAKE_AUTOMOC OFF)
+set(CMAKE_AUTOUIC OFF)
+set(CMAKE_AUTORCC OFF)
+
+if(TUNNEL_USE_PREBUILT_TSBRIDGE)
+    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/PrebuiltTsZarrBridge.cmake")
+else()
 # vendored 源码经 FetchContent 并入构建树；首次 configure 需要联网下载依赖源码
 # （abseil/riegeli 等）且需要 Python >= 3.10（bazel_to_cmake 在配置期运行）。
 set(TUNNEL_TENSORSTORE_SOURCE_DIR
@@ -212,6 +225,7 @@ foreach(optional_dependency IN ITEMS
         target_link_libraries(TsZarrBridge PRIVATE ${optional_dependency})
     endif()
 endforeach()
+endif()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE TsZarrBridge)
 
@@ -221,6 +235,17 @@ if(MSVC)
     target_compile_options(TsZarrBench PRIVATE /utf-8 /FS /EHsc)
 endif()
 target_link_libraries(TsZarrBench PRIVATE TsZarrBridge)
+
+if(TUNNEL_USE_PREBUILT_TSBRIDGE)
+    foreach(_tszarr_consumer IN ITEMS ${PROJECT_NAME} TsZarrBench)
+        add_custom_command(TARGET ${_tszarr_consumer} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<TARGET_FILE:TsZarrBridge>"
+                "$<TARGET_FILE_DIR:${_tszarr_consumer}>"
+            COMMENT "Deploying prebuilt TsZarrBridge runtime"
+        )
+    endforeach()
+endif()
 
 add_executable(ZarrRulesSelfTest
     src/tszarr/ZarrRulesSelfTest.cpp

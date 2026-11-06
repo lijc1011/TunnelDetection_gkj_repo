@@ -16,14 +16,41 @@
                 "DALSA_DIR": "C:/Program Files/Teledyne DALSA/Sapera",
                 "HIK_MVS_DIR": "C:/Program Files (x86)/MVS/Development",
                 "TUNNEL_USE_Z5": "OFF",
+                "TUNNEL_USE_PREBUILT_TSBRIDGE": "OFF",
                 "CMAKE_POLICY_VERSION_MINIMUM": "3.5"
             },
             "environment": {
                 "PATH": "C:/Qt/Qt6.8.3/6.8.3/msvc2022_64/bin;D:/dev/opencv/build/x64/vc16/bin;C:/Program Files/Teledyne DALSA/Sapera/Bin;C:/Program Files (x86)/Common Files/MVS/Runtime/Win64_x64;D:/dev/vcpkg/installed/x64-windows/bin;D:/dev/vcpkg/installed/x64-windows/debug/bin;$penv{PATH}"
             }
+        },
+        {
+            "name": "local-app",
+            "displayName": "Daily application - prebuilt TsZarrBridge",
+            "inherits": "local",
+            "binaryDir": "${sourceDir}/build/local-app",
+            "cacheVariables": {
+                "TUNNEL_USE_PREBUILT_TSBRIDGE": "ON",
+                "CMAKE_ASM_NASM_COMPILER": null
+            }
         }
     ],
     "buildPresets": [
+        {
+            "name": "local-app-debug",
+            "displayName": "Debug application (prebuilt storage)",
+            "configurePreset": "local-app",
+            "configuration": "Debug",
+            "targets": ["TunnelDetection"],
+            "nativeToolOptions": ["/m"]
+        },
+        {
+            "name": "local-app-release",
+            "displayName": "Release application (prebuilt storage)",
+            "configurePreset": "local-app",
+            "configuration": "Release",
+            "targets": ["TunnelDetection"],
+            "nativeToolOptions": ["/m"]
+        },
         {
             "name": "local-debug",
             "displayName": "Debug 全量构建（含 TensorStore，首次/TensorStore 变动时用）",
