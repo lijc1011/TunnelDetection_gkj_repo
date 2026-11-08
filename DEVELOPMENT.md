@@ -56,7 +56,8 @@ git push origin main
 
 ## TensorStore（Zarr v3 存储后端）
 
-采集数据默认写 Zarr v3（`Config.xml` 里 `SaveZarr=1`；设为 `0` 回退旧 `.camdatx` 流程）。
+采集格式由运行目录的 `Config.xml` 控制：`SaveZarr=1` 写 Zarr v3，
+`SaveZarr=0` 使用旧 `.camdatx` 流程。预编译桥接只调整构建，不改变此开关。
 TensorStore 源码 vendor 在 `3rdparty/TensorStore`，经 FetchContent 并入构建树；
 主程序只链接窄接口桥 `TsZarrBridge.dll`（`src/tszarr/`，C ABI）。
 
@@ -79,6 +80,9 @@ TensorStore 源码 vendor 在 `3rdparty/TensorStore`，经 FetchContent 并入�
 - Debug：`.\tools\cmake.ps1 --build --preset local-app-debug`
 - Release：`.\tools\cmake.ps1 --build --preset local-app-release`
 - 两个配置分别引用对应的桥接库，不混用 Debug/Release。
+- 日常入口只生成 Debug/Release 两种配置；不再生成 TensorStore 的第三方工程。
+- `CMakeUserPresets.json` 不随 Git 更新。已有电脑需要把模板中的 `local-app` 配置预设、
+  `local-app-debug` / `local-app-release` 构建预设合入自己的文件，保留原有 SDK 路径和工具集。
 - 其他配置仍可通过完整构建入口生成；日常入口也必须先具备对应配置的 DLL/LIB。
 - 原 `local-debug-fast` / `local-release-fast` 预设保留，供旧流程使用。
 
@@ -114,6 +118,18 @@ VS Code 任务 `Build Debug/Release FULL (TensorStore)` 会先执行
 桥接库属于本机构建产物，不提交到 Git。新电脑先完成对应配置的完整构建，
 再使用日常入口；也可用 `TUNNEL_TSBRIDGE_PREBUILT_DIR` 指向匹配的预编译库根目录。
 更新桥接库后可运行 `bin/<Config>/TsZarrBench.exe --self-test` 校验写入和读回。
+
+### 预编译桥接库的匹配检查
+
+完整构建在生成桥接 DLL 后，自动写入同目录的 `TsZarrBridge.dll.build.json`，记录
+桥接 `.h/.cpp`、DLL/LIB 的 SHA-256，以及配置、MSVC 工具集和架构信息。
+日常配置和每次构建都会核对这些信息；缺失记录、源码变动、DLL/LIB 被替换或
+配置不匹配时直接报错，要求先执行对应配置的 FULL 构建，避免静默使用旧接口。
+只需重建当前要使用的配置；另一配置未更新不会阻止已匹配配置的日常构建。
+已有的旧 DLL 首次使用本机制时也需要完整构建一次，不能手动补写记录冒充重建。
+使用外部预编译目录时，须同时提供对应的 DLL、LIB 和 `TsZarrBridge.dll.build.json`。
+
+这些检查只影响构建过程，不改变 `SaveZarr`、采集流程、文件格式或界面交互。
 
 ### 存储格式说明
 

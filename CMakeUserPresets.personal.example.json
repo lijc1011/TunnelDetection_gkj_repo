@@ -30,6 +30,7 @@
             "binaryDir": "${sourceDir}/build/local-app",
             "cacheVariables": {
                 "TUNNEL_USE_PREBUILT_TSBRIDGE": "ON",
+                "CMAKE_CONFIGURATION_TYPES": "Debug;Release",
                 "CMAKE_ASM_NASM_COMPILER": null
             }
         }

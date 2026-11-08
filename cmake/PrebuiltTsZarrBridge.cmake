@@ -19,6 +19,7 @@ set_target_properties(TsZarrBridge PROPERTIES
 )
 
 set(_tszarr_available_configs "")
+set(_tszarr_check_errors "")
 foreach(_tszarr_config IN LISTS _tszarr_configs)
     string(TOUPPER "${_tszarr_config}" _tszarr_config_upper)
     set(_tszarr_dll "${TUNNEL_TSBRIDGE_PREBUILT_DIR}/${_tszarr_config}/TsZarrBridge.dll")
@@ -29,14 +30,36 @@ foreach(_tszarr_config IN LISTS _tszarr_configs)
         "IMPORTED_IMPLIB_${_tszarr_config_upper}" "${_tszarr_lib}"
     )
     if(EXISTS "${_tszarr_dll}" AND EXISTS "${_tszarr_lib}")
-        list(APPEND _tszarr_available_configs "${_tszarr_config}")
+        tszarr_artifact_command(_tszarr_check_command CHECK
+            "${_tszarr_dll}" "${_tszarr_lib}" "${_tszarr_config}")
+        execute_process(COMMAND ${_tszarr_check_command}
+            RESULT_VARIABLE _tszarr_check_result
+            OUTPUT_VARIABLE _tszarr_check_output
+            ERROR_VARIABLE _tszarr_check_error)
+        if(_tszarr_check_result EQUAL 0)
+            message(STATUS "Verified prebuilt TsZarrBridge (${_tszarr_config})")
+            list(APPEND _tszarr_available_configs "${_tszarr_config}")
+        else()
+            # Rebuilding Debug must not require rebuilding an unused Release DLL.
+            # The selected configuration is checked again before every build.
+            message(STATUS "Prebuilt TsZarrBridge (${_tszarr_config}) needs a FULL rebuild")
+            string(APPEND _tszarr_check_errors "\n${_tszarr_check_error}")
+        endif()
     endif()
 endforeach()
 
 if(NOT _tszarr_available_configs)
     message(FATAL_ERROR
-        "No matching prebuilt TsZarrBridge DLL/LIB found in ${TUNNEL_TSBRIDGE_PREBUILT_DIR}. "
+        "No verified prebuilt TsZarrBridge DLL/LIB found in ${TUNNEL_TSBRIDGE_PREBUILT_DIR}. "
         "Run tools/cmake.ps1 --preset local, then "
-        "tools/cmake.ps1 --build --preset local-debug (or local-release) first.")
+        "tools/cmake.ps1 --build --preset local-debug (or local-release) first."
+        "${_tszarr_check_errors}")
 endif()
+tszarr_artifact_command(_tszarr_check_command CHECK
+    "$<TARGET_FILE:TsZarrBridge>" "$<TARGET_LINKER_FILE:TsZarrBridge>" "$<CONFIG>")
+add_custom_target(CheckTsZarrBridge
+    COMMAND ${_tszarr_check_command}
+    COMMENT "Checking prebuilt TsZarrBridge source and configuration"
+    VERBATIM
+)
 message(STATUS "Using prebuilt TsZarrBridge (${_tszarr_available_configs}); TensorStore configuration skipped")

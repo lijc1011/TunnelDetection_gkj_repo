@@ -171,6 +171,7 @@ set(CMAKE_AUTOMOC OFF)
 set(CMAKE_AUTOUIC OFF)
 set(CMAKE_AUTORCC OFF)
 
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/TsZarrBridgeArtifacts.cmake")
 if(TUNNEL_USE_PREBUILT_TSBRIDGE)
     include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/PrebuiltTsZarrBridge.cmake")
 else()
@@ -225,6 +226,13 @@ foreach(optional_dependency IN ITEMS
         target_link_libraries(TsZarrBridge PRIVATE ${optional_dependency})
     endif()
 endforeach()
+tszarr_artifact_command(_tszarr_record_command WRITE
+    "$<TARGET_FILE:TsZarrBridge>" "$<TARGET_LINKER_FILE:TsZarrBridge>" "$<CONFIG>")
+add_custom_command(TARGET TsZarrBridge POST_BUILD
+    COMMAND ${_tszarr_record_command}
+    COMMENT "Recording TsZarrBridge source and binary fingerprints"
+    VERBATIM
+)
 endif()
 
 target_link_libraries(${PROJECT_NAME} PRIVATE TsZarrBridge)
@@ -238,6 +246,7 @@ target_link_libraries(TsZarrBench PRIVATE TsZarrBridge)
 
 if(TUNNEL_USE_PREBUILT_TSBRIDGE)
     foreach(_tszarr_consumer IN ITEMS ${PROJECT_NAME} TsZarrBench)
+        add_dependencies(${_tszarr_consumer} CheckTsZarrBridge)
         add_custom_command(TARGET ${_tszarr_consumer} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "$<TARGET_FILE:TsZarrBridge>"
